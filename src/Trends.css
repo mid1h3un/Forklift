@@ -1,0 +1,451 @@
+/* ===============================
+ 🌟 General Layout
+================================= */
+body{
+  margin: 0;
+}
+.trends-container {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  overflow-y: auto;
+  height: 100vh;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+/* ===============================
+ 📊 Graph Section
+================================= */
+.graph-card {
+  background: #fefefe;
+  padding: 22px;
+  border-radius: 14px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.graph-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
+}
+
+.graph-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chart-wrapper {
+  width: 100%;
+  height: 380px;
+}
+
+/* ===============================
+ 🎛 Graph Controls (Play / Pause)
+================================= */
+.graph-controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.graph-controls button {
+  background: linear-gradient(135deg, #007bff, #0056d2);
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.graph-controls button:hover {
+  background: linear-gradient(135deg, #0056d2, #0040a5);
+  transform: translateY(-2px);
+}
+
+.graph-controls button:active {
+  transform: scale(0.96);
+}
+
+/* ===============================
+ 🗑 Delete Button
+================================= */
+.delete-graph-btn {
+  border: none;
+  background: #ff4d4f;
+  color: white;
+  font-size: 15px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.delete-graph-btn:hover {
+  background: #d9363e;
+}
+
+/* ===============================
+ ⚙ Tag & Axis Controls
+================================= */
+.axis-controls {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 0;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.tag-config {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 10px;
+  background: #f8f9fa;
+  padding: 10px 14px;
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.tag-config:hover {
+  background: #f1f4f9;
+}
+
+.tag-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ===============================
+ 🎨 Color Picker
+================================= */
+/* ===============================
+🎨 Professional Color Picker
+================================= */
+/* Wrapper for color picker */
+.color-picker-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Hide the default color input */
+.color-picker {
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  background: none;
+  outline: none;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+/* Style the color circle itself */
+.color-picker::-webkit-color-swatch {
+  border: none;
+  border-radius: 50%;
+}
+
+.color-picker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-picker::-moz-color-swatch {
+  border: none;
+  border-radius: 50%;
+}
+
+/* Hover animation */
+.color-picker:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+}
+
+/* Add an outline ring when focused */
+.color-picker:focus {
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.4);
+}
+
+
+/* ===============================
+ 📦 Dropdown with Search & Checkbox
+================================= */
+.dropdown-container {
+  margin: 10px 0;
+}
+
+.dropdown-label {
+  font-weight: 600;
+  margin-right: 10px;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+  width: 260px;
+}
+
+.dropdown-toggle {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  background-color: #fff;
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dropdown-toggle:hover {
+  border-color: #007bff;
+  box-shadow: 0 0 4px rgba(0, 123, 255, 0.2);
+}
+
+.dropdown-toggle .arrow {
+  float: right;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  width: 100%;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  padding: 10px;
+  max-height: 240px;
+  overflow-y: auto;
+  animation: fadeIn 0.2s ease;
+}
+
+.dropdown-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  border-radius: 5px;
+  transition: background 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background: #f1f4f9;
+}
+
+.dropdown-item input {
+  cursor: pointer;
+}
+
+/* ===============================
+ 🔍 Search Box
+================================= */
+.search-box {
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+  font-size: 14px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.search-box:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 4px rgba(0, 123, 255, 0.3);
+}
+
+.no-results {
+  text-align: center;
+  color: #888;
+  font-size: 13px;
+}
+
+/* ===============================
+ 📊 Y-Axis Dropdown
+================================= */
+.yaxis-dropdown {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 10px;
+}
+
+.yaxis-dropdown .dropdown-toggle {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.yaxis-dropdown .dropdown-toggle:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+.yaxis-dropdown .dropdown-menu {
+  position: absolute;
+  top: 45px;
+  left: 0;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  width: 220px;
+  z-index: 1000;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* ===============================
+ 💬 Popup Settings
+================================= */
+.popup-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  animation: fadeIn 0.25s ease;
+}
+
+.popup {
+  background: white;
+  padding: 22px;
+  border-radius: 12px;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.popup label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.popup-buttons {
+  display: flex;
+  justify-content: space-between;
+}
+
+.popup-buttons button {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.popup-buttons button:hover {
+  background: #0056b3;
+}
+
+/* ===============================
+ 🧩 Miscellaneous
+================================= */
+.no-graphs {
+  color: gray;
+  text-align: center;
+  font-style: italic;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.checkbox-list {
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.checkbox-item {
+  display: block;
+  margin-bottom: 5px;
+}
+
+/* ===============================
+ 🌈 Animations
+================================= */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===============================
+ 📱 Responsive Design
+================================= */
+@media (max-width: 1024px) {
+  .axis-controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dropdown {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .graph-controls {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .graph-controls button {
+    width: 100%;
+  }
+
+  .dropdown-toggle {
+    font-size: 13px;
+  }
+
+  .popup {
+    width: 90%;
+  }
+
+  .chart-wrapper {
+    height: 300px;
+  }
+}
