@@ -10,8 +10,13 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const Trends = () => {
-  const availableTags = ["TT1", "TT2", "TT3", "TT4", "LT1", "LT2", "LT3", "A", "B"];
+const ForkliftTrends = () => {
+  // Generate forklift tags: Forklift1_Speed, Forklift1_Voltage, etc.
+  const availableTags = [];
+  for (let i = 1; i <= 10; i++) {
+    availableTags.push(`Forklift${i}_Speed`);
+    availableTags.push(`Forklift${i}_Voltage`);
+  }
 
   const [graph, setGraph] = useState({
     data: [],
@@ -32,12 +37,10 @@ const Trends = () => {
   const [historyStartTime, setHistoryStartTime] = useState("");
   const [historyEndDate, setHistoryEndDate] = useState("");
   const [historyEndTime, setHistoryEndTime] = useState("");
-  const [historyTags, setHistoryTags] = useState([]);
-  const [historyAggregation, setHistoryAggregation] = useState("1s");
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-  const [viewMode, setViewMode] = useState("live"); // 'live' or 'history'
+  const [viewMode, setViewMode] = useState("live");
+  const [historyAggregation, setHistoryAggregation] = useState("1s");
 
-  // Base API URL
   const API_BASE_URL = "http://localhost:5000/api";
 
   // Fetch live data
@@ -46,14 +49,12 @@ const Trends = () => {
       const response = await fetch(`${API_BASE_URL}/latest`);
       const data = await response.json();
 
+      // Map the API data (spd, volt) to all forklifts
       const mockData = {};
-      availableTags.forEach(tag => {
-        if (data[tag] !== undefined) {
-          mockData[tag] = parseFloat(String(data[tag]).replace(/[^\d.-]/g, "")) || 0;
-        } else {
-          mockData[tag] = 0;
-        }
-      });
+      for (let i = 1; i <= 10; i++) {
+        mockData[`Forklift${i}_Speed`] = parseFloat(data.spd) || 0;
+        mockData[`Forklift${i}_Voltage`] = parseFloat(data.volt) || 0;
+      }
 
       const newPoint = {
         Time: new Date().toLocaleTimeString(),
@@ -70,87 +71,73 @@ const Trends = () => {
   };
 
   // Fetch historical data
-  const fetchHistoryData = async () => {
-    if (!historyStartDate || !historyStartTime || !historyEndDate || !historyEndTime) {
-      alert("Please select both start and end date/time");
-      return;
-    }
+  // Fetch historical data
+const fetchHistoryData = async () => {
+  if (!historyStartDate || !historyStartTime || !historyEndDate || !historyEndTime) {
+    alert("Please select both start and end date/time");
+    return;
+  }
 
-    const selectedTags = graph.selectedTags;
+  const selectedTags = graph.selectedTags;
+  if (selectedTags.length === 0) {
+    alert("Please select at least one tag from the main tag selector");
+    return;
+  }
 
-    if (selectedTags.length === 0) {
-      alert("Please select at least one tag from the main tag selector");
-      return;
-    }
-    setIsLoadingHistory(true);
+  setIsLoadingHistory(true);
+
+  try {
+    const startDateTime = `${historyStartDate}T${historyStartTime}`;
+    const endDateTime = `${historyEndDate}T${historyEndTime}`;
     
-    try {
-      const startDateTime = `${historyStartDate}T${historyStartTime}`;
-      const endDateTime = `${historyEndDate}T${historyEndTime}`;
-      
-      console.log("Fetching history from:", startDateTime, "to:", endDateTime);
-      console.log("Tags:", selectedTags);
-      console.log("Aggregation:", historyAggregation);
-      
-      const params = new URLSearchParams({
-        start: startDateTime,
-        end: endDateTime,
-        tags: selectedTags.join(','),
-        aggregation: historyAggregation
-      });
+    const params = new URLSearchParams({
+      start: startDateTime,
+      end: endDateTime,
+      tags: selectedTags.join(","),
+      aggregation: historyAggregation,
+    });
 
-      const url = `${API_BASE_URL}/history?${params}`;
-      console.log("Request URL:", url);
+    const url = `${API_BASE_URL}/history?${params}`;
+    const response = await fetch(url);
+    const data = await response.json();
 
-      const response = await fetch(url);
-      const data = await response.json();
-      
-      console.log("Response data:", data);
-      console.log("Number of records:", data.length);
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch data");
-      }
-
-      if (!data || data.length === 0) {
-        alert("No data found for the selected date range. Please try a different range.");
-        setIsLoadingHistory(false);
-        return;
-      }
-
-      // Transform the data to match chart format
-      const formattedData = data.map(item => {
-        const dataPoint = {
-          Time: new Date(item.timestamp).toLocaleString()
-        };
-        
-        // Add each tag's value
-        selectedTags.forEach(tag => {
-          dataPoint[tag] = item[tag] !== undefined ? item[tag] : 0;
-      });
-        
-        return dataPoint;
-      });
-
-      console.log("Formatted data:", formattedData.slice(0, 3)); // Log first 3 records
-
-      setGraph((prev) => ({
-        ...prev,
-        data: formattedData,
-        isPaused: true
-      }));
-
-      setViewMode("history");
-      setShowHistoryModal(false);
-      
-      alert(`Successfully loaded ${formattedData.length} data points`);
-    } catch (error) {
-      console.error("Error fetching history data:", error);
-      alert(`Failed to fetch historical data: ${error.message}`);
-    } finally {
-      setIsLoadingHistory(false);
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to fetch data");
     }
-  };
+
+    if (!data || data.length === 0) {
+      alert("No data found for the selected date range.");
+      setIsLoadingHistory(false);
+      return;
+    }
+
+    // ✅ Convert backend fields -> chart fields
+    const formattedData = data.map((item) => {
+      const d = { Time: item.time }; // time already formatted by backend
+      selectedTags.forEach((tag) => {
+        if (tag.includes("Speed")) d[tag] = item.spd || 0;
+        if (tag.includes("Voltage")) d[tag] = item.volt || 0;
+      });
+      return d;
+    });
+
+    setGraph((prev) => ({
+      ...prev,
+      data: formattedData,
+      isPaused: true,
+    }));
+
+    setViewMode("history");
+    setShowHistoryModal(false);
+    alert(`Successfully loaded ${formattedData.length} data points`);
+  } catch (error) {
+    console.error("Error fetching history data:", error);
+    alert(`Failed to fetch historical data: ${error.message}`);
+  } finally {
+    setIsLoadingHistory(false);
+  }
+};
+
 
   // Export data as CSV
   const exportToCSV = () => {
@@ -171,7 +158,7 @@ const Trends = () => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `trends_data_${new Date().toISOString()}.csv`;
+    a.download = `forklift_trends_${new Date().toISOString()}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -205,10 +192,11 @@ const Trends = () => {
       
       const tagSettings = { ...prev.tagSettings };
       if (!tagSettings[tag]) {
-        const colors = ['#007bff', '#28a745', '#dc3545', '#ffc107', '#17a2b8', '#6f42c1', '#e83e8c', '#fd7e14', '#20c997'];
+        const colors = ['#007bff', '#28a745', '#dc3545', '#ffc107', '#17a2b8', '#6f42c1', '#e83e8c', '#fd7e14', '#20c997', '#6610f2'];
+        const isSpeed = tag.includes('Speed');
         tagSettings[tag] = { 
           color: colors[availableTags.indexOf(tag) % colors.length], 
-          scale: 100, 
+          scale: isSpeed ? 20 : 50, // Default scale based on metric type
           divisions: 5 
         };
       }
@@ -236,23 +224,15 @@ const Trends = () => {
     }
   };
 
-  const toggleHistoryTag = (tag) => {
-    setHistoryTags(prev => 
-      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
-    );
-  };
-
-  // Check database stats
-
   const filteredTags = availableTags.filter((tag) =>
     tag.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h2>📈 Trends {viewMode === "history" && <span style={{ fontSize: "16px", color: "#666" }}>(Historical View)</span>}</h2>
+      <h2>📈 Forklift Trends {viewMode === "history" && <span style={{ fontSize: "16px", color: "#666" }}>(Historical View)</span>}</h2>
 
-      <div style={{ marginBottom: "10px", display: "flex", gap: "10px" }}>
+      <div style={{ marginBottom: "10px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
         <div style={{ position: "relative" }}>
           <button 
             onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -282,23 +262,15 @@ const Trends = () => {
                 boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  marginBottom: "8px",
-                }}
-              >
-                <div
-                  style={{
-                    flex: 1,
-                    padding: "4px",
-                    border: "1px solid #ccc",
-                    background: "#f0f0f0",
-                    textAlign: "center",
-                    fontWeight: "bold",
-                  }}
-                >
+              <div style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}>
+                <div style={{
+                  flex: 1,
+                  padding: "4px",
+                  border: "1px solid #ccc",
+                  background: "#f0f0f0",
+                  textAlign: "center",
+                  fontWeight: "bold",
+                }}>
                   TAG LIST
                 </div>
                 <button
@@ -316,16 +288,15 @@ const Trends = () => {
                   ✕
                 </button>
               </div>
+              
               <div style={{ marginBottom: "8px", position: "relative" }}>
-                <span
-                  style={{
-                    position: "absolute",
-                    left: "8px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    pointerEvents: "none",
-                  }}
-                >
+                <span style={{
+                  position: "absolute",
+                  left: "8px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  pointerEvents: "none",
+                }}>
                   🔍
                 </span>
                 <input
@@ -348,7 +319,7 @@ const Trends = () => {
                   key={tag}
                   style={{
                     marginBottom: "8px",
-                    borderBottom: "1px solid #eee",
+                    borderBottom: "1px solid #444",
                     paddingBottom: "8px",
                   }}
                 >
@@ -368,9 +339,7 @@ const Trends = () => {
                         <input
                           type="color"
                           value={graph.tagSettings[tag].color}
-                          onChange={(e) =>
-                            updateSetting(tag, "color", e.target.value)
-                          }
+                          onChange={(e) => updateSetting(tag, "color", e.target.value)}
                           style={{ marginLeft: "4px", verticalAlign: "middle", cursor: "pointer" }}
                         />
                       </label>
@@ -380,9 +349,7 @@ const Trends = () => {
                           type="number"
                           min="1"
                           value={graph.tagSettings[tag].scale}
-                          onChange={(e) =>
-                            updateSetting(tag, "scale", e.target.value)
-                          }
+                          onChange={(e) => updateSetting(tag, "scale", e.target.value)}
                           style={{ width: "60px", marginLeft: "4px", padding: "2px" }}
                         />
                       </label>
@@ -392,9 +359,7 @@ const Trends = () => {
                           type="number"
                           min="1"
                           value={graph.tagSettings[tag].divisions}
-                          onChange={(e) =>
-                            updateSetting(tag, "divisions", e.target.value)
-                          }
+                          onChange={(e) => updateSetting(tag, "divisions", e.target.value)}
                           style={{ width: "60px", marginLeft: "4px", padding: "2px" }}
                         />
                       </label>
@@ -420,6 +385,7 @@ const Trends = () => {
           📊 View History
         </button>
 
+        {viewMode === "history" && (
           <button 
             onClick={backToLive}
             style={{
@@ -433,7 +399,7 @@ const Trends = () => {
           >
             🔴 Back to Live
           </button>
-        
+        )}
 
         <button 
           onClick={exportToCSV}
@@ -449,55 +415,49 @@ const Trends = () => {
         >
           💾 Export CSV
         </button>
-          {viewMode === "live" && (
-    <div
-      style={{
-        display: "flex",
-        gap: "10px",
-        alignItems: "center",
-        marginLeft: "auto"  // pushes controls to the right
-      }}
-    >
-      <button 
-        onClick={togglePause}
-        style={{
-          padding: "8px 16px",
-          cursor: "pointer",
-          borderRadius: "5px",
-          border: "1px solid #ccc",
-          background: graph.isPaused ? "#28a745" : "#ffc107"
-        }}
-      >
-        {graph.isPaused ? "▶️ Play" : "⏸ Pause"}
-      </button>
-      <input
-        type="number"
-        min="1"
-        value={frequencyValue}
-        onChange={(e) => handleFrequencyChange(e.target.value, frequencyUnit)}
-        style={{
-          padding: "8px",
-          borderRadius: "5px",
-          border: "1px solid #ccc",
-          width: "60px"
-        }}
-      />
-      <select
-        value={frequencyUnit}
-        onChange={(e) => handleFrequencyChange(frequencyValue, e.target.value)}
-        style={{
-          padding: "8px",
-          borderRadius: "5px",
-          border: "1px solid #ccc",
-          cursor: "pointer"
-        }}
-      >
-        <option value="seconds">Seconds</option>
-        <option value="minutes">Minutes</option>
-      </select>
-      <span>⏱ Update Frequency</span>
-    </div>
-  )}
+
+        {viewMode === "live" && (
+          <div style={{ display: "flex", gap: "10px", alignItems: "center", marginLeft: "auto" }}>
+            <button 
+              onClick={togglePause}
+              style={{
+                padding: "8px 16px",
+                cursor: "pointer",
+                borderRadius: "5px",
+                border: "1px solid #ccc",
+                background: graph.isPaused ? "#28a745" : "#ffc107"
+              }}
+            >
+              {graph.isPaused ? "▶️ Play" : "⏸ Pause"}
+            </button>
+            <input
+              type="number"
+              min="1"
+              value={frequencyValue}
+              onChange={(e) => handleFrequencyChange(e.target.value, frequencyUnit)}
+              style={{
+                padding: "8px",
+                borderRadius: "5px",
+                border: "1px solid #ccc",
+                width: "60px"
+              }}
+            />
+            <select
+              value={frequencyUnit}
+              onChange={(e) => handleFrequencyChange(frequencyValue, e.target.value)}
+              style={{
+                padding: "8px",
+                borderRadius: "5px",
+                border: "1px solid #ccc",
+                cursor: "pointer"
+              }}
+            >
+              <option value="seconds">Seconds</option>
+              <option value="minutes">Minutes</option>
+            </select>
+            <span>⏱ Update Frequency</span>
+          </div>
+        )}
       </div>
 
       {/* History Modal */}
@@ -536,7 +496,7 @@ const Trends = () => {
                 style={{
                   padding: "5px 10px",
                   cursor: "pointer",
-                  background: "#f44336",
+                  background: "#ff4757",
                   color: "white",
                   border: "none",
                   borderRadius: "3px"
@@ -553,13 +513,25 @@ const Trends = () => {
                   type="date"
                   value={historyStartDate}
                   onChange={(e) => setHistoryStartDate(e.target.value)}
-                  style={{ flex: 1, padding: "8px", borderRadius: "5px", border: "1px solid #ccc" }}
+                  style={{ 
+                    flex: 1, 
+                    padding: "8px", 
+                    borderRadius: "5px", 
+                    border: "1px solid #ccc"
+                  }}
                 />
                 <input
                   type="time"
                   value={historyStartTime}
                   onChange={(e) => setHistoryStartTime(e.target.value)}
-                  style={{ flex: 1, padding: "8px", borderRadius: "5px", border: "1px solid #ccc" }}
+                  style={{ 
+                    flex: 1, 
+                    padding: "8px", 
+                    borderRadius: "5px", 
+                    border: "1px solid #667eea",
+                    background: "#1a1a2e",
+                    color: "white"
+                  }}
                 />
               </div>
             </div>
@@ -571,13 +543,27 @@ const Trends = () => {
                   type="date"
                   value={historyEndDate}
                   onChange={(e) => setHistoryEndDate(e.target.value)}
-                  style={{ flex: 1, padding: "8px", borderRadius: "5px", border: "1px solid #ccc" }}
+                  style={{ 
+                    flex: 1, 
+                    padding: "8px", 
+                    borderRadius: "5px", 
+                    border: "1px solid #667eea",
+                    background: "#1a1a2e",
+                    color: "white"
+                  }}
                 />
                 <input
                   type="time"
                   value={historyEndTime}
                   onChange={(e) => setHistoryEndTime(e.target.value)}
-                  style={{ flex: 1, padding: "8px", borderRadius: "5px", border: "1px solid #ccc" }}
+                  style={{ 
+                    flex: 1, 
+                    padding: "8px", 
+                    borderRadius: "5px", 
+                    border: "1px solid #667eea",
+                    background: "#1a1a2e",
+                    color: "white"
+                  }}
                 />
               </div>
             </div>
@@ -620,9 +606,21 @@ const Trends = () => {
         </div>
       )}
 
-      <div style={{ width: "100%", height: "440px", background: "#f9f9f9", borderRadius: "8px", padding: "10px" }}>
+      <div style={{ 
+        width: "100%", 
+        height: "440px", 
+        background: "#f9f9f9", 
+        borderRadius: "8px", 
+        padding: "10px"
+      }}>
         {graph.selectedTags.length === 0 ? (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#999" }}>
+          <div style={{ 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center", 
+            height: "100%", 
+            color: "#999"
+          }}>
             Select tags to display data on the chart
           </div>
         ) : (
@@ -637,7 +635,12 @@ const Trends = () => {
                   orientation={i % 2 === 0 ? "left" : "right"}
                   stroke={graph.tagSettings[tag]?.color || "#007bff"}
                   domain={[0, (graph.tagSettings[tag]?.scale || 100) * (graph.tagSettings[tag]?.divisions || 5)]}
-                  label={{ value: tag, angle: -90, position: 'insideLeft', style: { fill: graph.tagSettings[tag]?.color } }}
+                  label={{ 
+                    value: tag, 
+                    angle: -90, 
+                    position: 'insideLeft', 
+                    style: { fill: graph.tagSettings[tag]?.color } 
+                  }}
                 />
               ))}
               <Tooltip />
@@ -662,4 +665,4 @@ const Trends = () => {
   );
 };
 
-export default Trends;
+export default ForkliftTrends;

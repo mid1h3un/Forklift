@@ -99,242 +99,53 @@ def debug_data():
 
 @app.route("/api/history", methods=["GET"])
 def get_history():
-    """
-    Get historical data for specified time range
-    Query params:
-    - start: start datetime (ISO format: YYYY-MM-DDTHH:MM or YYYY-MM-DDTHH:MM:SS)
-    - end: end datetime (ISO format: YYYY-MM-DDTHH:MM or YYYY-MM-DDTHH:MM:SS)
-    - tags: comma-separated tag names (optional, e.g., TT1,TT2,LT1)
-    - aggregation: 1s, 1min, 5min, 1hr (optional, default: raw data)
-    """
     try:
-        start_time = request.args.get('start')
-        end_time = request.args.get('end')
-        tags_param = request.args.get('tags')
-        aggregation = request.args.get('aggregation')
-        
-        print(f"Received params - start: {start_time}, end: {end_time}, tags: {tags_param}, aggregation: {aggregation}")
-        
-        if not start_time or not end_time:
-            return jsonify({"error": "Missing required parameters: start and end"}), 400
-        
-        # Parse tags if provided
-        selected_tags = None
-        if tags_param:
-            selected_tags = [tag.strip() for tag in tags_param.split(',') if tag.strip()]
-            print(f"Selected tags: {selected_tags}")
-        
-        # Convert to datetime objects - try multiple formats
-        try:
-            start_dt = datetime.datetime.fromisoformat(start_time.replace('Z', '+00:00'))
-            end_dt = datetime.datetime.fromisoformat(end_time.replace('Z', '+00:00'))
-        except ValueError:
-            try:
-                # Try parsing without timezone
-                start_dt = datetime.datetime.strptime(start_time[:19], '%Y-%m-%dT%H:%M:%S')
-                end_dt = datetime.datetime.strptime(end_time[:19], '%Y-%m-%dT%H:%M:%S')
-            except ValueError:
-                # Try parsing without seconds (YYYY-MM-DDTHH:MM)
-                start_dt = datetime.datetime.strptime(start_time[:16], '%Y-%m-%dT%H:%M')
-                end_dt = datetime.datetime.strptime(end_time[:16], '%Y-%m-%dT%H:%M')
-        
+        start_str = request.args.get("start")
+        end_str = request.args.get("end")
+        tags = request.args.get("tags", "").split(",")
+
+        # Parse start/end datetimes
+        start_dt = datetime.datetime.fromisoformat(start_str)
+        end_dt = datetime.datetime.fromisoformat(end_str)
+
+        # Convert to UNIX timestamps (integer seconds)
+        start_ts = int(start_dt.timestamp())
+        end_ts = int(end_dt.timestamp())
+
+        print(f"Received params - start: {start_str}, end: {end_str}, tags: {tags}")
         print(f"Parsed dates - start: {start_dt}, end: {end_dt}")
-        
-        # Check if timestamps are stored as strings or datetime objects
-        sample = collection.find_one({})
-        timestamp_is_string = sample and isinstance(sample.get('timestamp'), str)
-        
-        print(f"Timestamp is string: {timestamp_is_string}")
-        
-        # Build base query based on timestamp type
-        if timestamp_is_string:
-            # If timestamps are strings, compare as strings (ISO format)
-            start_str = start_dt.isoformat()
-            end_str = end_dt.isoformat()
-            query = {
-                "timestamp": {
-                    "$gte": start_str,
-                    "$lte": end_str
-                }
-            }
-        else:
-            # If timestamps are datetime objects, compare as datetime
-            query = {
-                "timestamp": {
-                    "$gte": start_dt,
-                    "$lte": end_dt
-                }
-            }
-        
+        print(f"Converted timestamps - start: {start_ts}, end: {end_ts}")
+
+        # ✅ Use your actual collection
+        coll = collection
+
+        # ✅ Query using your actual field 'time' (stored as string)
+        query = {"time": {"$gte": str(start_ts), "$lte": str(end_ts)}}
+
         print(f"Query: {query}")
-        
-        # Check if data exists in the collection
-        count = collection.count_documents(query)
-        print(f"Found {count} documents matching query")
-        
-        if count == 0:
-            # Return empty array if no data found
-            return jsonify([])
-        
-        # Define all available sensor fields
-        all_sensor_fields = ['TT1', 'TT2', 'TT3', 'TT4', 'LT1', 'LT2', 'LT3', 'A', 'B', 
-                            'Tank A', 'Tank B', 'Tank C', 'Pressure', 'Temperature', 'Flow']
-        
-        # If no aggregation, return raw data
-        if not aggregation or aggregation == 'raw' or aggregation == '1s':
-            projection = {"_id": 0, "timestamp": 1}
-            
-            # Add selected tags to projection or all fields if no tags specified
-            if selected_tags:
-                for tag in selected_tags:
-                    projection[tag] = 1
-            else:
-                for field in all_sensor_fields:
-                    projection[field] = 1
-            
-            cursor = collection.find(query, projection).sort("timestamp", ASCENDING)
-            result = list(cursor)
-            
-            # Clean the values (remove units and convert to numbers)
-            for doc in result:
-                for key, value in doc.items():
-                    if key != 'timestamp' and value is not None:
-                        doc[key] = clean_value(value)
-            
-            print(f"Returning {len(result)} raw records")
-            return jsonify(result)
-        
-        # Determine aggregation interval in milliseconds
-        agg_map = {
-            '1min': 60000,
-            '5min': 300000,
-            '1hr': 3600000
-        }
-        agg_ms = agg_map.get(aggregation)
-        
-        if not agg_ms:
-            return jsonify({"error": "Invalid aggregation. Use: 1s, 1min, 5min, 1hr"}), 400
-        
-        # Build aggregation pipeline
-        pipeline = [
-            {
-                "$match": query
-            }
-        ]
-        
-        # If timestamps are strings, convert them to dates for aggregation
-        if timestamp_is_string:
-            pipeline.append({
-                "$addFields": {
-                    "timestamp_date": {"$toDate": "$timestamp"}
-                }
-            })
-            time_field = "$timestamp_date"
-        else:
-            time_field = "$timestamp"
-        
-        # Add time bucketing
-        pipeline.append({
-            "$addFields": {
-                "time_bucket": {
-                    "$toDate": {
-                        "$multiply": [
-                            {"$floor": {
-                                "$divide": [
-                                    {"$toLong": time_field},
-                                    agg_ms
-                                ]
-                            }},
-                            agg_ms
-                        ]
-                    }
-                }
-            }
-        })
-        
-        # Build group stage
-        group_stage = {
-            "_id": "$time_bucket",
-            "timestamp": {"$first": "$time_bucket"},
-            "count": {"$sum": 1}
-        }
-        
-        # Determine which fields to aggregate
-        fields_to_aggregate = selected_tags if selected_tags else all_sensor_fields
-        
-        # Add averages for each field (convert to float first to handle units)
-        for field in fields_to_aggregate:
-            # Create a field that converts the value to a number
-            # Key fix: Use $trim to remove whitespace before conversion
-            pipeline.append({
-                "$addFields": {
-                    f"{field}_numeric": {
-                        "$cond": [
-                            {"$eq": [{"$type": f"${field}"}, "string"]},
-                            {
-                                "$toDouble": {
-                                    "$trim": {  # Add $trim to remove leading/trailing whitespace
-                                        "input": {
-                                            "$replaceAll": {
-                                                "input": {
-                                                    "$replaceAll": {
-                                                        "input": {
-                                                            "$replaceAll": {
-                                                                "input": f"${field}",
-                                                                "find": "°C",
-                                                                "replacement": ""
-                                                            }
-                                                        },
-                                                        "find": "L/s",
-                                                        "replacement": ""
-                                                    }
-                                                },
-                                                "find": "psi",
-                                                "replacement": ""
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            {"$toDouble": f"${field}"}
-                        ]
-                    }
-                }
-            })
-            group_stage[f"{field}_avg"] = {"$avg": f"${field}_numeric"}
-        
-        pipeline.append({
-            "$group": group_stage
-        })
-        
-        # Sort by timestamp
-        pipeline.append({
-            "$sort": {"timestamp": 1}
-        })
-        
-        # Build projection stage
-        project_stage = {
-            "_id": 0,
-            "timestamp": 1,
-            "count": 1
-        }
-        
-        for field in fields_to_aggregate:
-            project_stage[field] = f"${field}_avg"
-        
-        pipeline.append({
-            "$project": project_stage
-        })
-        
-        result = list(collection.aggregate(pipeline))
-        print(f"Returning {len(result)} aggregated records")
-        return jsonify(result)
-        
+
+        # ✅ Only return time, speed, voltage
+        docs = list(
+            coll.find(query, {"_id": 0, "time": 1, "spd": 1, "volt": 1})
+                .sort("time", 1)
+        )
+
+        print(f"Found {len(docs)} documents matching query")
+
+        # ✅ Convert numeric timestamp string to readable format
+        for d in docs:
+            try:
+                d["time"] = datetime.datetime.fromtimestamp(int(d["time"])).strftime("%d-%b-%Y %H:%M:%S")
+                d["spd"] = float(d.get("spd", 0))
+                d["volt"] = float(d.get("volt", 0))
+            except Exception as e:
+                print(f"Skipping invalid record: {e}")
+
+        return jsonify(docs)
+
     except Exception as e:
-        print(f"Error in get_history: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"error": str(e), "details": "Check server logs for more info"}), 500
+        print(f"❌ Error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/store", methods=["POST"])

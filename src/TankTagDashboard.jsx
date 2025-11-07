@@ -1,46 +1,68 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Rnd } from "react-rnd";
-import "./TankTagDashboard.css";
 
-const TankTagDashboard = () => {
-  const tanks = useMemo(() => ["Tank A", "Tank B", "Tank C"], []);
-  const tags = useMemo(() => ["Pressure", "Temperature", "Flow"], []);
-
+const ForkliftDashboard = () => {
+  const forklifts = useMemo(() => 
+    Array.from({ length: 10 }, (_, i) => `Forklift ${i + 1}`), 
+    []
+  );
+  
   const [selected, setSelected] = useState("");
   const [widgets, setWidgets] = useState([]);
-  const [tagData, setTagData] = useState({}); // ✅ New state for Flask data
+  const [tagData, setTagData] = useState({});
 
-  // Get logged-in username
   const username = useMemo(() => localStorage.getItem("username") || "guest", []);
 
-  // ✅ Fetch tag data from Flask backend
+  // Fetch tag data from Flask backend
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:5000/api/latest"); // Flask endpoint
+        const res = await fetch("http://127.0.0.1:5000/api/latest");
         const data = await res.json();
-        setTagData(data);
+
+        const timestamp = parseInt(data.time, 10);
+        const readableTime = !isNaN(timestamp)
+          ? new Date(timestamp * 1000).toLocaleString("en-IN", {
+              timeZone: "Asia/Kolkata",
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            })
+          : "";
+
+        const mappedData = {
+          Speed: data.spd || 0,
+          Voltage: data.volt || 0,
+          Time: readableTime,
+        };
+
+        setTagData(mappedData);
       } catch (error) {
         console.error("Error fetching data from Flask:", error);
       }
     };
 
-    fetchData(); // fetch on load
-    const interval = setInterval(fetchData, 5000); // update every 5 seconds
+    fetchData();
+    const interval = setInterval(fetchData, 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // ✅ Update widgets whenever Flask data updates
+  // Update widgets whenever Flask data updates
   useEffect(() => {
     setWidgets((prev) =>
       prev.map((w) => ({
         ...w,
-        value: tagData[w.name] || w.value || 0,
+        speed: tagData.Speed || 0,
+        voltage: tagData.Voltage || 0,
+        time: tagData.Time || "",
       }))
     );
   }, [tagData]);
 
-  // Load widgets only for this user
+  // Load widgets for this user
   useEffect(() => {
     const saved = localStorage.getItem(`dashboardWidgets_${username}`);
     if (saved) {
@@ -54,7 +76,7 @@ const TankTagDashboard = () => {
     }
   }, [username]);
 
-  // Save widgets when changed (debounced)
+  // Save widgets when changed
   useEffect(() => {
     if (widgets.length === 0) return;
     const timer = setTimeout(() => {
@@ -63,9 +85,9 @@ const TankTagDashboard = () => {
     return () => clearTimeout(timer);
   }, [widgets, username]);
 
-  // Add widget (no random values now)
+  // Add forklift widget
   const addWidget = useCallback(
-    (name, type) => {
+    (name) => {
       setWidgets((prev) => {
         const alreadyExists = prev.some((w) => w.name === name);
         if (alreadyExists) return prev;
@@ -75,12 +97,13 @@ const TankTagDashboard = () => {
           {
             id: Date.now(),
             name,
-            type,
             x: 50,
             y: 50,
-            width: 200,
-            height: 120,
-            value: tagData[name] || 0, // ✅ use Flask value
+            width: 280,
+            height: 200,
+            speed: tagData.Speed || 0,
+            voltage: tagData.Voltage || 0,
+            time: tagData.Time || "",
           },
         ];
       });
@@ -97,11 +120,10 @@ const TankTagDashboard = () => {
       const name = e.target.value;
       setSelected(name);
       if (!name) return;
-      if (tanks.includes(name)) addWidget(name, "tank");
-      if (tags.includes(name)) addWidget(name, "tag");
+      if (forklifts.includes(name)) addWidget(name);
       setSelected("");
     },
-    [tanks, tags, addWidget]
+    [forklifts, addWidget]
   );
 
   const handleDragStop = useCallback((id, d) => {
@@ -125,40 +147,67 @@ const TankTagDashboard = () => {
     );
   }, []);
 
-  const getTankColor = useCallback((value) => {
-    const percent = parseFloat(value);
-    if (percent < 40) return "#007bff";
-    if (percent < 75) return "#00c851";
-    return "#ff4444";
-  }, []);
-
   return (
-    <div className="dashboard-container">
+    <div style={{ width: "100%", height: "100vh", display: "flex", flexDirection: "column", background: "#1a1a2e" }}>
       {/* Control Bar */}
-      <div className="control-bar">
-        <select value={selected} onChange={handleSelect} className="dropdown">
-          <option value="">Select Tank/Tag</option>
-          <optgroup label="Tanks">
-            {tanks.map((t) => (
-              <option key={t}>{t}</option>
-            ))}
-          </optgroup>
-          <optgroup label="Tags">
-            {tags.map((t) => (
-              <option key={t}>{t}</option>
-            ))}
-          </optgroup>
+      <div style={{
+        padding: "15px 20px",
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+        display: "flex",
+        gap: "15px",
+        alignItems: "center"
+      }}>
+        <select 
+          value={selected} 
+          onChange={handleSelect}
+          style={{
+            padding: "10px 15px",
+            fontSize: "15px",
+            border: "none",
+            borderRadius: "8px",
+            background: "white",
+            cursor: "pointer",
+            outline: "none",
+            minWidth: "200px",
+            fontWeight: "500"
+          }}
+        >
+          <option value="">Select Forklift</option>
+          {forklifts.map((f) => (
+            <option key={f} value={f}>{f}</option>
+          ))}
         </select>
 
         {widgets.length > 0 && (
-          <button className="clear-btn" onClick={() => setWidgets([])}>
+          <button 
+            onClick={() => setWidgets([])}
+            style={{
+              padding: "10px 20px",
+              fontSize: "15px",
+              border: "none",
+              borderRadius: "8px",
+              background: "#ff4757",
+              color: "white",
+              cursor: "pointer",
+              fontWeight: "600",
+              transition: "all 0.3s ease"
+            }}
+            onMouseOver={(e) => e.target.style.background = "#ff3838"}
+            onMouseOut={(e) => e.target.style.background = "#ff4757"}
+          >
             Clear Dashboard
           </button>
         )}
       </div>
 
-      {/* Dashboard Widgets */}
-      <div className="dashboard-area">
+      {/* Dashboard Area */}
+      <div style={{ 
+        flex: 1, 
+        position: "relative", 
+        overflow: "hidden",
+        background: "#1a1a2e"
+      }}>
         {widgets.map((w) => (
           <Rnd
             key={w.id}
@@ -169,39 +218,108 @@ const TankTagDashboard = () => {
             onResizeStop={(e, dir, ref, delta, pos) =>
               handleResizeStop(w.id, dir, ref, delta, pos)
             }
-            minWidth={180}
-            minHeight={250}
-            className="widget"
+            minWidth={250}
+            minHeight={180}
+            style={{
+              background: "white",
+              borderRadius: "12px",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+              overflow: "hidden"
+            }}
           >
-            <div className="widget-content">
-              <button className="delete-btn" onClick={() => deleteWidget(w.id)}>
-                ✕
-              </button>
-              <div className="widget-header">
-                <div className="widget-title">{w.name}</div>
+            <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+              {/* Header */}
+              <div style={{
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                padding: "12px 15px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center"
+              }}>
+                <h3 style={{ 
+                  margin: 0, 
+                  color: "white", 
+                  fontSize: "16px",
+                  fontWeight: "600"
+                }}>
+                  {w.name}
+                </h3>
+                <button 
+                  onClick={() => deleteWidget(w.id)}
+                  style={{
+                    background: "rgba(255,255,255,0.2)",
+                    border: "none",
+                    color: "white",
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "50%",
+                    cursor: "pointer",
+                    fontSize: "18px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "all 0.2s ease"
+                  }}
+                  onMouseOver={(e) => e.target.style.background = "rgba(255,255,255,0.3)"}
+                  onMouseOut={(e) => e.target.style.background = "rgba(255,255,255,0.2)"}
+                >
+                  ✕
+                </button>
               </div>
 
-              <div className="widget-body">
-                {w.type === "tank" ? (
-                  <div className="tank-widget">
-                    <div className="tank">
-                      <div
-                        className="water"
-                        style={{
-                          height: `${parseFloat(w.value)}%`,
-                          background: `linear-gradient(to top, ${getTankColor(
-                            w.value
-                          )}, #aaddff)`,
-                        }}
-                      />
-                    </div>
-                    <div className="tank-label">{w.value}%</div>
-                  </div>
-                ) : (
-                  <div className="tag-display">
-                    <div className="tag-value">{w.value}</div>
-                  </div>
-                )}
+              {/* Body */}
+              <div style={{
+                flex: 1,
+                padding: "20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "15px",
+                background: "#f8f9fa"
+              }}>
+                <div style={{
+                  background: "white",
+                  padding: "12px 15px",
+                  borderRadius: "8px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center"
+                }}>
+                  <span style={{ fontWeight: "600", color: "#555" }}>Speed:</span>
+                  <span style={{ fontSize: "18px", fontWeight: "700", color: "#667eea" }}>
+                    {w.speed} km/h
+                  </span>
+                </div>
+
+                <div style={{
+                  background: "white",
+                  padding: "12px 15px",
+                  borderRadius: "8px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center"
+                }}>
+                  <span style={{ fontWeight: "600", color: "#555" }}>Voltage:</span>
+                  <span style={{ fontSize: "18px", fontWeight: "700", color: "#764ba2" }}>
+                    {w.voltage} V
+                  </span>
+                </div>
+
+                <div style={{
+                  background: "white",
+                  padding: "12px 15px",
+                  borderRadius: "8px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "5px"
+                }}>
+                  <span style={{ fontWeight: "600", color: "#555", fontSize: "14px" }}>Time:</span>
+                  <span style={{ fontSize: "13px", color: "#666" }}>
+                    {w.time || "Loading..."}
+                  </span>
+                </div>
               </div>
             </div>
           </Rnd>
@@ -211,4 +329,4 @@ const TankTagDashboard = () => {
   );
 };
 
-export default TankTagDashboard;
+export default ForkliftDashboard;
