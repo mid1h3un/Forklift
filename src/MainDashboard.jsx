@@ -43,7 +43,7 @@ const MainDashboard = () => {
             className={`sidebar-btn ${activeTab === "tanks" ? "active" : ""}`}
             onClick={() => setActiveTab("tanks")}
           >
-            🧱 {sidebarOpen && "Tank Dashboard"}
+            🧱 {sidebarOpen && "Dashboard"}
           </button>
 
           <button
