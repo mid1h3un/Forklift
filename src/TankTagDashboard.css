@@ -1,273 +1,139 @@
-/* === GENERAL LAYOUT === */
+/* === Reset all spacing === */
+* {
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box;
+}
+
+/* === Full dashboard layout === */
+body,
+html,
+#root,
 .dashboard-container {
-  min-height: 100vh;
-  background-color: #f5f6fa;
-  font-family: Arial, sans-serif;
-  display: flex;
-  flex-direction: column;
-}
-
-/* === NAVBAR === */
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #1a73e8;
-  color: white;
-  padding: 12px 20px;
-}
-
-.navbar-left {
-  font-weight: bold;
-  font-size: 18px;
-}
-
-.navbar-right {
-  display: flex;
-  gap: 10px;
-}
-
-.nav-btn {
-  background-color: white;
-  color: #1a73e8;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.nav-btn.logout {
-  background-color: #ff5c5c;
-  color: white;
-}
-
-.nav-btn:hover {
-  opacity: 0.8;
-}
-
-/* === CONTROL BAR === */
-.control-bar {
-  display: flex;
-  gap: 10px;
-  padding: 10px;
-  background: #fff;
-  border-bottom: 1px solid #ddd;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.dropdown {
-  padding: 8px 12px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  font-size: 14px;
-  background-color: #fff;
-}
-
-.clear-btn {
-  background: #ff4444;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 12px;
-  cursor: pointer;
-}
-
-.clear-btn:hover {
-  background: #cc0000;
-}
-
-/* === DASHBOARD AREA === */
-.dashboard-area {
-  flex: 1;
-  position: relative;
-  overflow: auto;
-  background-color: #fff;
-  border: 2px solid #ddd;
-  border-radius: 10px;
-  margin: 10px 20px;
-  padding: 20px;
-  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
-}
-
-/* === WIDGET CARD === */
-.widget {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  transition: box-shadow 0.2s ease;
-  overflow: hidden;
-  padding: 8px;
-}
-
-.widget:hover {
-  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.25);
-}
-
-.widget-content {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.widget-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #e2e2e2;
-  padding-bottom: 4px;
-  margin-bottom: 4px;
-}
-
-.widget-title {
-  font-weight: 600;
-  font-size: 14px;
-  color: #333;
-}
-
-.widget-type {
-  font-size: 12px;
-  color: #777;
-}
-
-.widget-body {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px;
-}
-
-.delete-btn {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  border: none;
-  background: transparent;
-  color: #ff4444;
-  font-size: 18px;
-  cursor: pointer;
-  z-index: 10;
-}
-
-/* === TANK WIDGET === */
-.tank-widget {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-}
-
-.tank {
-  position: relative;
-  width: 60px;
-  height: 90px;
-  border: 3px solid #4a90e2;
-  border-radius: 6px;
-  overflow: hidden;
-  background: linear-gradient(to bottom, #e0f0ff, #cce4ff);
-  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.2);
-}
-
-.water {
-  position: absolute;
-  bottom: 0;
   width: 100%;
-  transition: height 0.8s ease, background 0.5s ease;
-  animation: waveMove 2s infinite ease-in-out;
+  height: 100%;
+  background: #1a1a2e;
 }
 
-.tank-label {
-  margin-top: 6px;
+/* === Control bar (top) === */
+.dashboard-container > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px !important;
+  padding: 8px 10px !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* === Select & button styling === */
+.dashboard-container select,
+.dashboard-container button {
+  margin: 0 !important;
+  padding: 6px 10px !important;
+  font-size: 14px;
+  border: none;
+  border-radius: 6px !important;
+  outline: none;
+  cursor: pointer;
+}
+
+.dashboard-container select {
+  background: white;
+  font-weight: 500;
+  min-width: 180px;
+}
+
+.dashboard-container button {
+  background: #ff4757;
+  color: white;
   font-weight: 600;
-  color: #333;
+  transition: background 0.3s ease;
 }
 
-@keyframes waveMove {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
-  100% { transform: translateY(0); }
+.dashboard-container button:hover {
+  background: #ff3838;
 }
 
-/* === TAG VALUE DISPLAY === */
-.tag-display {
+/* === Dashboard area === */
+.dashboard-container > div:last-child {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #1a1a2e;
+}
+
+/* === Widget (Rnd container) === */
+.widget-box {
+  background: white;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+/* === Widget header === */
+.widget-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px !important;
+}
+
+.widget-header h3 {
+  color: white;
+  font-size: 15px !important;
+  font-weight: 600;
+  margin: 0 !important;
+}
+
+.widget-header button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.widget-header button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* === Widget body === */
+.widget-body {
+  background: #f8f9fa;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  gap: 6px !important;
+  padding: 10px !important;
+  height: 100%;
 }
 
-.tag-value {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1a73e8;
-}
-
-/* === PROFILE MODAL === */
-.profile-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+/* === Inner info cards === */
+.info-card {
+  background: white;
+  border-radius: 6px !important;
+  padding: 8px 10px !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  z-index: 999;
-  animation: fadeIn 0.3s ease;
 }
 
-.profile-card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 25px 35px;
-  width: 350px;
-  max-width: 90%;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-  text-align: center;
-  animation: popIn 0.3s ease;
+.info-card span {
+  margin: 0 !important;
+  font-weight: 600;
+  color: #444;
 }
 
-.profile-card h2 {
-  color: #333;
-  margin-bottom: 15px;
-}
-
-.profile-info {
-  text-align: left;
-  margin-bottom: 20px;
-  color: #555;
-}
-
-.profile-info p {
-  margin: 8px 0;
-}
-
-.close-profile-btn {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: 0.2s ease;
-}
-
-.close-profile-btn:hover {
-  background: #0056b3;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes popIn {
-  from { transform: scale(0.9); opacity: 0.8; }
-  to { transform: scale(1); opacity: 1; }
+.info-card span:last-child {
+  font-weight: 700;
+  color: #667eea;
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Rnd } from "react-rnd";
 
+
 const ForkliftDashboard = () => {
   const forklifts = useMemo(() => 
     Array.from({ length: 10 }, (_, i) => `Forklift ${i + 1}`), 
@@ -219,7 +220,7 @@ const ForkliftDashboard = () => {
               handleResizeStop(w.id, dir, ref, delta, pos)
             }
             minWidth={250}
-            minHeight={180}
+            minHeight={200}
             style={{
               background: "white",
               borderRadius: "12px",

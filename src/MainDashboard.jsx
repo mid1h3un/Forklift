@@ -30,15 +30,20 @@ const MainDashboard = () => {
   return (
     <div className="main-dashboard">
       {/* Sidebar */}
-      <div className={`sidebar ${sidebarOpen ? "open" : "closed"}`}>
+      <aside className={`sidebar ${sidebarOpen ? "open" : "closed"}`}>
         <div className="sidebar-header">
-          <h2 className="sidebar-title">{sidebarOpen ? "🌐 My System" : "🌐"}</h2>
-          <button className="toggle-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
+          <h2 className="sidebar-title">
+            {sidebarOpen ? "🌐 My System" : "🌐"}
+          </h2>
+          <button
+            className="toggle-btn"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
             {sidebarOpen ? "⟨" : "⟩"}
           </button>
         </div>
 
-        <div className="sidebar-content">
+        <nav className="sidebar-content">
           <button
             className={`sidebar-btn ${activeTab === "tanks" ? "active" : ""}`}
             onClick={() => setActiveTab("tanks")}
@@ -66,34 +71,44 @@ const MainDashboard = () => {
           >
             🔁 {sidebarOpen && "Mimic"}
           </button>
-        </div>
+        </nav>
 
         <div className="sidebar-footer">
-          <button className="sidebar-btn profile" onClick={() => setShowProfile(true)}>
+          <button
+            className="sidebar-btn profile"
+            onClick={() => setShowProfile(true)}
+          >
             👤 {sidebarOpen && "Profile"}
           </button>
           <button className="sidebar-btn logout" onClick={handleLogout}>
             🚪 {sidebarOpen && "Logout"}
           </button>
         </div>
-      </div>
+      </aside>
 
       {/* Main Content */}
-      <div className="main-content">
+      <main className="main-content">
         {activeTab === "tanks" && <TankTagDashboard />}
         {activeTab === "Trends" && <Trends />}
         {activeTab === "Reports" && <Reports />}
         {activeTab === "mimic" && <Mimic />}
-      </div>
+      </main>
 
       {/* Profile Modal */}
       {showProfile && (
         <div className="profile-modal">
           <div className="profile-card">
             <h3>👤 Profile</h3>
-            <p><strong>Name:</strong> {user.name}</p>
-            <p><strong>Email:</strong> {user.email}</p>
-            <button className="close-profile" onClick={() => setShowProfile(false)}>
+            <p>
+              <strong>Name:</strong> {user.name}
+            </p>
+            <p>
+              <strong>Email:</strong> {user.email}
+            </p>
+            <button
+              className="close-profile"
+              onClick={() => setShowProfile(false)}
+            >
               Close
             </button>
           </div>

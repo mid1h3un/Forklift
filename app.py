@@ -5,7 +5,8 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from pymongo import MongoClient, ASCENDING, DESCENDING
 from dotenv import load_dotenv
 import os
-import datetime
+from datetime import datetime
+
 import io
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -68,6 +69,38 @@ def get_all_data():
         return jsonify(data_list)
     return jsonify({"message": "No data found"}), 404
 
+
+DEVICE_FREQUENCY = 5   # seconds
+
+@app.route("/runtime-report", methods=["POST"])
+def runtime_report():
+    data = request.get_json()
+
+    start = data["startTime"]
+    end = data["endTime"]
+
+    # Convert to UNIX timestamp (integer)
+    start_ts = int(datetime.fromisoformat(start).timestamp())
+    end_ts = int(datetime.fromisoformat(end).timestamp())
+
+    # Query MongoDB:
+    # speed > 0 → machine is running
+    rows = list(collection.find({
+        "time": { "$gte": str(start_ts), "$lte": str(end_ts) },
+        "spd": { "$ne": "0" }
+    }))
+
+    run_count = len(rows)
+
+    # Calculate runtime
+    running_seconds = run_count * DEVICE_FREQUENCY
+    running_minutes = running_seconds / 60
+
+    return jsonify({
+        "data_points": run_count,
+        "running_seconds": running_seconds,
+        "running_minutes": round(running_minutes, 2)
+    })
 
 @app.route("/api/debug", methods=["GET"])
 def debug_data():
