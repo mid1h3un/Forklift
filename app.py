@@ -20,7 +20,6 @@ bcrypt = Bcrypt(app)
 # Access variables
 secret = os.getenv("SECRET_KEY")
 db_url = os.getenv("DB_URL")
-print(secret, db_url)
 
 # Secret key for JWT
 app.config["JWT_SECRET_KEY"] = secret 

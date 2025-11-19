@@ -229,8 +229,8 @@ const fetchHistoryData = async () => {
   );
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h2>📈 Forklift Trends {viewMode === "history" && <span style={{ fontSize: "16px", color: "#666" }}>(Historical View)</span>}</h2>
+    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif",background:"#1a1a2e"}}>
+      <h2 style={{color:"white"}}>📈 Forklift Trends {viewMode === "history" && <span style={{ fontSize: "16px", color: "#ffffffff" }}>(Historical View)</span>}</h2>
 
       <div style={{ marginBottom: "10px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
         <div style={{ position: "relative" }}>
