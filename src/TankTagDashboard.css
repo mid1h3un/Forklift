@@ -1,0 +1,139 @@
+/* === Reset all spacing === */
+* {
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box;
+}
+
+/* === Full dashboard layout === */
+body,
+html,
+#root,
+.dashboard-container {
+  width: 100%;
+  height: 100%;
+  background: #1a1a2e;
+}
+
+/* === Control bar (top) === */
+.dashboard-container > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px !important;
+  padding: 8px 10px !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* === Select & button styling === */
+.dashboard-container select,
+.dashboard-container button {
+  margin: 0 !important;
+  padding: 6px 10px !important;
+  font-size: 14px;
+  border: none;
+  border-radius: 6px !important;
+  outline: none;
+  cursor: pointer;
+}
+
+.dashboard-container select {
+  background: white;
+  font-weight: 500;
+  min-width: 180px;
+}
+
+.dashboard-container button {
+  background: #ff4757;
+  color: white;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+
+.dashboard-container button:hover {
+  background: #ff3838;
+}
+
+/* === Dashboard area === */
+.dashboard-container > div:last-child {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #1a1a2e;
+}
+
+/* === Widget (Rnd container) === */
+.widget-box {
+  background: white;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+/* === Widget header === */
+.widget-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px !important;
+}
+
+.widget-header h3 {
+  color: white;
+  font-size: 15px !important;
+  font-weight: 600;
+  margin: 0 !important;
+}
+
+.widget-header button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.widget-header button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* === Widget body === */
+.widget-body {
+  background: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+  gap: 6px !important;
+  padding: 10px !important;
+  height: 100%;
+}
+
+/* === Inner info cards === */
+.info-card {
+  background: white;
+  border-radius: 6px !important;
+  padding: 8px 10px !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.info-card span {
+  margin: 0 !important;
+  font-weight: 600;
+  color: #444;
+}
+
+.info-card span:last-child {
+  font-weight: 700;
+  color: #667eea;
+}

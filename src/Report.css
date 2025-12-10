@@ -1,0 +1,102 @@
+.report-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background: #1a1a2e;
+}
+
+.report-card {
+  background: white;
+  width: 380px;
+  padding: 28px;
+  border-radius: 16px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
+  animation: fadeIn 0.5s ease;
+}
+
+.title {
+  text-align: center;
+  margin-bottom: 24px;
+  color: #0d47a1;
+  font-weight: bold;
+}
+
+.label {
+  margin-top: 12px;
+  margin-bottom: 6px;
+  display: block;
+  font-weight: 600;
+}
+
+.input {
+  width: 93%;
+  padding: 10px;
+  border: 2px solid #1a73e8;
+  border-radius: 8px;
+  outline: none;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+.input:focus {
+  border-color: #0d47a1;
+  box-shadow: 0 0 6px rgba(13, 71, 161, 0.4);
+}
+
+.btn {
+  margin-top: 18px;
+  width: 100%;
+  padding: 12px;
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  font-size: 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn:hover {
+  background-color: #0d47a1;
+}
+
+.result-box {
+  margin-top: 22px;
+  padding: 16px;
+  border-radius: 12px;
+  background: #e3f2fd;
+  color: #0d47a1;
+  animation: fadeIn 0.4s ease;
+}
+
+.result-box h3 {
+  margin: 0 0 10px 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.button-row {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+.btn.pdf {
+  background-color: #e53935;
+}
+
+.btn.pdf:hover {
+  background-color: #b71c1c;
+}
+
+.btn.csv {
+  background-color: #43a047;
+}
+
+.btn.csv:hover {
+  background-color: #2e7d32;
+}
