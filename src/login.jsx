@@ -12,7 +12,7 @@ export default function AuthPage() {
 const handleAuth = async () => {
   try {
     const endpoint = isLogin ? "/login" : "/register";
-    const res = await axios.post(`http://flaskapi.us-east-1.elasticbeanstalk.com${endpoint}`, {
+    const res = await axios.post(`https://www.solvexesapp.com/${endpoint}`, {
       username,
       password,
     });
