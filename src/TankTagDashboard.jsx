@@ -18,7 +18,7 @@ const ForkliftDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("http://flaskapi.us-east-1.elasticbeanstalk.com/api/latest");
+        const res = await fetch("https://www.solvexesapp.com/api/latest");
         const data = await res.json();
 
         const timestamp = parseInt(data.time, 10);
