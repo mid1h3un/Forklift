@@ -41,7 +41,7 @@ const ForkliftTrends = () => {
   const [viewMode, setViewMode] = useState("live");
   const [historyAggregation, setHistoryAggregation] = useState("1s");
 
-  const API_BASE_URL = "http://flaskapi.us-east-1.elasticbeanstalk.com/api";
+  const API_BASE_URL = "https://www.solvexesapp.com/api";
 
   // Fetch live data
   const fetchLiveData = async () => {
