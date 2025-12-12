@@ -8,7 +8,7 @@ const Report = () => {
   const [running, setRunning] = useState(null);
 
   const getReport = async () => {
-    const res = await fetch("http://flaskapi.us-east-1.elasticbeanstalk.com/runtime-report", {
+    const res = await fetch("https://www.solvexesapp.com/runtime-report", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ startTime, endTime }),
