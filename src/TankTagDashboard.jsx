@@ -1,116 +1,188 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Rnd } from "react-rnd";
 
-
 const ForkliftDashboard = () => {
-  const forklifts = useMemo(() => 
-    Array.from({ length: 10 }, (_, i) => `Forklift ${i + 1}`), 
-    []
-  );
-  
+  const forklifts = useMemo(() => ([
+    { name: "Forklift 1", imei: "867512077469365" },
+    { name: "Forklift 2", imei: "865931084963206" },
+    { name: "Forklift 3", imei: "865931084970326" },
+    { name: "Forklift 4", imei: "865931084979863" },
+    { name: "Forklift 5", imei: "865931084970615" }
+  ]), []);
+
   const [selected, setSelected] = useState("");
   const [widgets, setWidgets] = useState([]);
-  const [tagData, setTagData] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Use ref to always have current widgets in fetch callback
+  const widgetsRef = useRef(widgets);
+  const fetchIntervalRef = useRef(null);
+  
+  useEffect(() => {
+    widgetsRef.current = widgets;
+  }, [widgets]);
 
-  const username = useMemo(() => localStorage.getItem("username") || "guest", []);
+  const username = localStorage.getItem("username") || "guest";
 
-  // Fetch tag data from Flask backend
+  /* ===============================
+     LOAD DASHBOARD FROM STORAGE
+     =============================== */
+  useEffect(() => {
+    const loadDashboard = () => {
+      try {
+        const saved = localStorage.getItem(`dashboard_${username}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            setWidgets(parsed);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load dashboard:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadDashboard();
+  }, [username]);
+
+  /* ===============================
+     SAVE DASHBOARD TO STORAGE
+     =============================== */
+  useEffect(() => {
+    if (isLoading) return;
+    
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          `dashboard_${username}`,
+          JSON.stringify(widgets)
+        );
+      } catch (err) {
+        console.error("Failed to save dashboard:", err);
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [widgets, username, isLoading]);
+
+  /* ===============================
+     FETCH DATA FOR ALL WIDGETS
+     =============================== */
   useEffect(() => {
     const fetchData = async () => {
+      const currentWidgets = widgetsRef.current;
+      
+      if (currentWidgets.length === 0) {
+        return;
+      }
+
       try {
-        const res = await fetch("https://www.solvexesapp.com/api/latest");
-        const data = await res.json();
+        const updated = await Promise.all(
+          currentWidgets.map(async (w) => {
+            try {
+              const res = await fetch(
+                `https://solvexesapp.com/api/latest?imei=${w.imei}`
+              );
 
-        const timestamp = parseInt(data.time, 10);
-        const readableTime = !isNaN(timestamp)
-          ? new Date(timestamp * 1000).toLocaleString("en-IN", {
-              timeZone: "Asia/Kolkata",
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-            })
-          : "";
+              if (!res.ok) {
+                return w;
+              }
+              
+              const data = await res.json();
 
-        const mappedData = {
-          Speed: data.spd || 0,
-          Voltage: data.volt || 0,
-          Time: readableTime,
-        };
+              const ts = parseInt(data.time, 10);
+              const readableTime = !isNaN(ts)
+                ? new Date(ts * 1000).toLocaleString("en-IN", {
+                    timeZone: "Asia/Kolkata",
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                  })
+                : "Invalid time";
 
-        setTagData(mappedData);
-      } catch (error) {
-        console.error("Error fetching data from Flask:", error);
+              return {
+                ...w,
+                speed: data.spd || 0,
+                voltage: data.volt || 0,
+                time: readableTime,
+                lastUpdate: new Date().toLocaleTimeString()
+              };
+            } catch (err) {
+              console.error(`Fetch error for ${w.imei}:`, err);
+              return w;
+            }
+          })
+        );
+
+        // Only update if data actually changed
+        setWidgets(prev => {
+          const hasChanges = updated.some((newWidget, idx) => {
+            const oldWidget = prev[idx];
+            return !oldWidget || 
+                   newWidget.speed !== oldWidget.speed || 
+                   newWidget.voltage !== oldWidget.voltage ||
+                   newWidget.time !== oldWidget.time;
+          });
+          
+          return hasChanges ? updated : prev;
+        });
+      } catch (err) {
+        console.error("Fetch error", err);
       }
     };
 
-    fetchData();
-    const interval = setInterval(fetchData, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Update widgets whenever Flask data updates
-  useEffect(() => {
-    setWidgets((prev) =>
-      prev.map((w) => ({
-        ...w,
-        speed: tagData.Speed || 0,
-        voltage: tagData.Voltage || 0,
-        time: tagData.Time || "",
-      }))
-    );
-  }, [tagData]);
-
-  // Load widgets for this user
-  useEffect(() => {
-    const saved = localStorage.getItem(`dashboardWidgets_${username}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) setWidgets(parsed);
-      } catch (error) {
-        console.warn("Corrupted widget data, resetting storage");
-        localStorage.removeItem(`dashboardWidgets_${username}`);
-      }
+    // Clear existing interval
+    if (fetchIntervalRef.current) {
+      clearInterval(fetchIntervalRef.current);
     }
-  }, [username]);
 
-  // Save widgets when changed
-  useEffect(() => {
-    if (widgets.length === 0) return;
-    const timer = setTimeout(() => {
-      localStorage.setItem(`dashboardWidgets_${username}`, JSON.stringify(widgets));
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [widgets, username]);
+    // Initial fetch
+    if (widgetsRef.current.length > 0) {
+      fetchData();
+    }
+    
+    // Set up interval
+    fetchIntervalRef.current = setInterval(fetchData, 2000);
 
-  // Add forklift widget
-  const addWidget = useCallback(
-    (name) => {
-      setWidgets((prev) => {
-        const alreadyExists = prev.some((w) => w.name === name);
-        if (alreadyExists) return prev;
+    return () => {
+      if (fetchIntervalRef.current) {
+        clearInterval(fetchIntervalRef.current);
+      }
+    };
+  }, []); // Empty dependency - uses ref for widgets
 
-        return [
-          ...prev,
-          {
-            id: Date.now(),
-            name,
-            x: 50,
-            y: 50,
-            width: 280,
-            height: 200,
-            speed: tagData.Speed || 0,
-            voltage: tagData.Voltage || 0,
-            time: tagData.Time || "",
-          },
-        ];
-      });
-    },
-    [tagData]
-  );
+  /* ===============================
+     ADD / REMOVE WIDGET
+     =============================== */
+  const addWidget = useCallback((forklift) => {
+    setWidgets((prev) => {
+      if (prev.some((w) => w.imei === forklift.imei)) {
+        console.log(`Widget for ${forklift.name} already exists`);
+        return prev;
+      }
+
+      const newWidget = {
+        id: Date.now(),
+        name: forklift.name,
+        imei: forklift.imei,
+        x: 50 + (prev.length * 20),
+        y: 50 + (prev.length * 20),
+        width: 250,
+        height: 200,
+        speed: 0,
+        voltage: 0,
+        time: "",
+        lastUpdate: ""
+      };
+
+      return [...prev, newWidget];
+    });
+  }, []);
 
   const deleteWidget = useCallback((id) => {
     setWidgets((prev) => prev.filter((w) => w.id !== id));
@@ -121,7 +193,11 @@ const ForkliftDashboard = () => {
       const name = e.target.value;
       setSelected(name);
       if (!name) return;
-      if (forklifts.includes(name)) addWidget(name);
+
+      const forklift = forklifts.find((f) => f.name === name);
+      if (forklift) {
+        addWidget(forklift);
+      }
       setSelected("");
     },
     [forklifts, addWidget]
@@ -148,6 +224,23 @@ const ForkliftDashboard = () => {
     );
   }, []);
 
+  if (isLoading) {
+    return (
+      <div style={{ 
+        width: "100%", 
+        height: "100vh", 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center",
+        background: "#1a1a2e",
+        color: "white",
+        fontSize: "18px"
+      }}>
+        Loading dashboard...
+      </div>
+    );
+  }
+
   return (
     <div style={{ width: "100%", height: "100vh", display: "flex", flexDirection: "column", background: "#1a1a2e" }}>
       {/* Control Bar */}
@@ -157,7 +250,8 @@ const ForkliftDashboard = () => {
         boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
         display: "flex",
         gap: "15px",
-        alignItems: "center"
+        alignItems: "center",
+        flexWrap: "wrap"
       }}>
         <select 
           value={selected} 
@@ -176,7 +270,7 @@ const ForkliftDashboard = () => {
         >
           <option value="">Select Forklift</option>
           {forklifts.map((f) => (
-            <option key={f} value={f}>{f}</option>
+            <option key={f.imei} value={f.name}>{f.name}</option>
           ))}
         </select>
 
@@ -200,6 +294,10 @@ const ForkliftDashboard = () => {
             Clear Dashboard
           </button>
         )}
+
+        <div style={{ color: "white", fontSize: "14px", marginLeft: "auto" }}>
+          {widgets.length} widget{widgets.length !== 1 ? 's' : ''} active
+        </div>
       </div>
 
       {/* Dashboard Area */}
@@ -209,6 +307,20 @@ const ForkliftDashboard = () => {
         overflow: "hidden",
         background: "#1a1a2e"
       }}>
+        {widgets.length === 0 && (
+          <div style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            color: "rgba(255,255,255,0.5)",
+            fontSize: "18px",
+            textAlign: "center"
+          }}>
+            Select a forklift to add to dashboard
+          </div>
+        )}
+
         {widgets.map((w) => (
           <Rnd
             key={w.id}
@@ -274,7 +386,7 @@ const ForkliftDashboard = () => {
                 padding: "20px",
                 display: "flex",
                 flexDirection: "column",
-                gap: "15px",
+                gap: "12px",
                 background: "#f8f9fa"
               }}>
                 <div style={{
@@ -316,11 +428,21 @@ const ForkliftDashboard = () => {
                   flexDirection: "column",
                   gap: "5px"
                 }}>
-                  <span style={{ fontWeight: "600", color: "#555", fontSize: "14px" }}>Time:</span>
+                  <span style={{ fontWeight: "600", color: "#555", fontSize: "14px" }}>Data Time:</span>
                   <span style={{ fontSize: "13px", color: "#666" }}>
-                    {w.time || "Loading..."}
+                    {w.time || "Waiting for data..."}
                   </span>
                 </div>
+
+                {w.lastUpdate && (
+                  <div style={{
+                    fontSize: "11px",
+                    color: "#999",
+                    textAlign: "center"
+                  }}>
+                    Last updated: {w.lastUpdate}
+                  </div>
+                )}
               </div>
             </div>
           </Rnd>
