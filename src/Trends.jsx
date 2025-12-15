@@ -11,7 +11,6 @@ import {
 } from "recharts";
 
 const ForkliftTrends = () => {
-  // Forklift list with IMEIs
   const forklifts = [
     { name: "Forklift 1", imei: "867512077469365" },
     { name: "Forklift 2", imei: "865931084963206" },
@@ -20,7 +19,6 @@ const ForkliftTrends = () => {
     { name: "Forklift 5", imei: "865931084970615" }
   ];
 
-  // Generate tags for all forklifts
   const availableTags = [];
   forklifts.forEach(fl => {
     availableTags.push(`${fl.name}_Speed`);
@@ -41,62 +39,38 @@ const ForkliftTrends = () => {
   const [frequencyValue, setFrequencyValue] = useState(2);
   const [frequencyUnit, setFrequencyUnit] = useState("seconds");
   
-  // History modal states
-  const [historyStartDate, setHistoryStartDate] = useState("");
-  const [historyStartTime, setHistoryStartTime] = useState("");
-  const [historyEndDate, setHistoryEndDate] = useState("");
-  const [historyEndTime, setHistoryEndTime] = useState("");
+  const [historyStart, setHistoryStart] = useState("");
+  const [historyEnd, setHistoryEnd] = useState("");
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [viewMode, setViewMode] = useState("live");
   const [historyAggregation, setHistoryAggregation] = useState("1s");
   const [debugInfo, setDebugInfo] = useState("");
 
-  const API_BASE_URL = "https://solvexesapp.com/api";
+  const API_BASE_URL = "https://www.solvexesapp.com/api";
 
-  // Helper function to get IMEI from tag name
   const getImeiFromTag = (tag) => {
-    // Tag format: "Forklift 1_Speed" or "Forklift 1_Voltage"
     const parts = tag.split('_');
-    const forkliftName = parts[0]; // "Forklift 1"
+    const forkliftName = parts[0];
     const forklift = forklifts.find(f => f.name === forkliftName);
-    console.log(`Tag: ${tag} -> Forklift: ${forkliftName} -> IMEI: ${forklift?.imei}`);
     return forklift?.imei;
   };
 
-  // Fetch live data for all selected forklifts
   const fetchLiveData = async () => {
     try {
-      console.log("=== Starting Live Data Fetch ===");
-      console.log("Selected tags:", graph.selectedTags);
-      
-      // Get unique IMEIs from selected tags
       const uniqueImeis = [...new Set(
         graph.selectedTags.map(tag => getImeiFromTag(tag)).filter(Boolean)
       )];
 
-      console.log("Unique IMEIs to fetch:", uniqueImeis);
+      if (uniqueImeis.length === 0) return;
 
-      if (uniqueImeis.length === 0) {
-        console.log("No IMEIs to fetch");
-        return;
-      }
-
-      // Fetch data for each IMEI
       const dataPromises = uniqueImeis.map(async (imei) => {
         try {
           const url = `${API_BASE_URL}/latest?imei=${imei}`;
-          console.log(`Fetching: ${url}`);
-          
           const response = await fetch(url);
-          console.log(`Response status for ${imei}:`, response.status);
           
-          if (!response.ok) {
-            console.error(`HTTP error ${response.status} for ${imei}`);
-            return null;
-          }
+          if (!response.ok) return null;
           
           const data = await response.json();
-          console.log(`Data received for ${imei}:`, data);
           return { imei, data };
         } catch (err) {
           console.error(`Error fetching data for ${imei}:`, err);
@@ -105,9 +79,7 @@ const ForkliftTrends = () => {
       });
 
       const results = await Promise.all(dataPromises);
-      console.log("All fetch results:", results);
       
-      // Map results to tag structure
       const newDataPoint = { 
         Time: new Date().toLocaleTimeString("en-IN", {
           hour: "2-digit",
@@ -120,32 +92,18 @@ const ForkliftTrends = () => {
         if (!result) return;
         const { imei, data } = result;
         const forklift = forklifts.find(f => f.imei === imei);
-        if (!forklift) {
-          console.log(`No forklift found for IMEI ${imei}`);
-          return;
-        }
+        if (!forklift) return;
 
         const speedTag = `${forklift.name}_Speed`;
         const voltageTag = `${forklift.name}_Voltage`;
         
         newDataPoint[speedTag] = parseFloat(data.spd) || 0;
         newDataPoint[voltageTag] = parseFloat(data.volt) || 0;
-        
-        console.log(`Mapped data for ${forklift.name}:`, {
-          [speedTag]: newDataPoint[speedTag],
-          [voltageTag]: newDataPoint[voltageTag]
-        });
       });
-
-      console.log("New data point:", newDataPoint);
 
       setGraph((prev) => {
         const updatedData = [...prev.data.slice(-19), newDataPoint];
-        console.log("Updated graph data length:", updatedData.length);
-        return {
-          ...prev,
-          data: updatedData,
-        };
+        return { ...prev, data: updatedData };
       });
 
       setDebugInfo(`Last fetch: ${new Date().toLocaleTimeString()} - ${results.filter(r => r).length} devices`);
@@ -155,9 +113,8 @@ const ForkliftTrends = () => {
     }
   };
 
-  // Fetch historical data
   const fetchHistoryData = async () => {
-    if (!historyStartDate || !historyStartTime || !historyEndDate || !historyEndTime) {
+    if (!historyStart || !historyEnd) {
       alert("Please select both start and end date/time");
       return;
     }
@@ -171,17 +128,15 @@ const ForkliftTrends = () => {
     setIsLoadingHistory(true);
 
     try {
-      const startDateTime = `${historyStartDate}T${historyStartTime}`;
-      const endDateTime = `${historyEndDate}T${historyEndTime}`;
+      // Convert datetime-local to ISO format with timezone
+      const startISO = new Date(historyStart).toISOString();
+      const endISO = new Date(historyEnd).toISOString();
       
-      console.log("Fetching history:", { startDateTime, endDateTime, selectedTags });
+      console.log("Fetching history:", { startISO, endISO, selectedTags });
       
-      // Get unique IMEIs from selected tags
       const uniqueImeis = [...new Set(
         selectedTags.map(tag => getImeiFromTag(tag)).filter(Boolean)
       )];
-
-      console.log("Historical IMEIs:", uniqueImeis);
 
       if (uniqueImeis.length === 0) {
         alert("No valid forklifts selected");
@@ -189,12 +144,11 @@ const ForkliftTrends = () => {
         return;
       }
 
-      // Fetch history for each IMEI
       const historyPromises = uniqueImeis.map(async (imei) => {
         try {
           const params = new URLSearchParams({
-            start: startDateTime,
-            end: endDateTime,
+            start: startISO,
+            end: endISO,
             imei: imei,
             aggregation: historyAggregation,
           });
@@ -211,7 +165,6 @@ const ForkliftTrends = () => {
           }
           
           const data = await response.json();
-          console.log(`History data for ${imei}:`, data);
           return { imei, data: Array.isArray(data) ? data : [] };
         } catch (err) {
           console.error(`Error fetching history for ${imei}:`, err);
@@ -220,9 +173,7 @@ const ForkliftTrends = () => {
       });
 
       const results = await Promise.all(historyPromises);
-      console.log("All history results:", results);
 
-      // Merge data from all IMEIs by timestamp
       const timeMap = new Map();
 
       results.forEach(({ imei, data }) => {
@@ -241,12 +192,9 @@ const ForkliftTrends = () => {
         });
       });
 
-      // Convert map to sorted array
       const formattedData = Array.from(timeMap.values()).sort((a, b) => 
         new Date(a.Time) - new Date(b.Time)
       );
-
-      console.log("Formatted historical data:", formattedData);
 
       if (formattedData.length === 0) {
         alert("No data found for the selected date range.");
@@ -271,7 +219,6 @@ const ForkliftTrends = () => {
     }
   };
 
-  // Export data as CSV
   const exportToCSV = () => {
     if (graph.data.length === 0) {
       alert("No data to export");
@@ -295,7 +242,6 @@ const ForkliftTrends = () => {
     window.URL.revokeObjectURL(url);
   };
 
-  // Back to live view
   const backToLive = () => {
     setGraph((prev) => ({
       ...prev,
@@ -305,38 +251,22 @@ const ForkliftTrends = () => {
     setViewMode("live");
   };
 
-  // Live data fetching effect
   useEffect(() => {
-    if (viewMode !== "live" || graph.isPaused || graph.selectedTags.length === 0) {
-      console.log("Skipping fetch:", { viewMode, isPaused: graph.isPaused, tagCount: graph.selectedTags.length });
-      return;
-    }
+    if (viewMode !== "live" || graph.isPaused || graph.selectedTags.length === 0) return;
 
-    console.log("Setting up live data fetch interval");
-    fetchLiveData(); // Immediate first fetch
-    
-    const interval = setInterval(() => {
-      console.log("Interval tick - fetching live data");
-      fetchLiveData();
-    }, updateFrequency);
-
-    return () => {
-      console.log("Cleaning up interval");
-      clearInterval(interval);
-    };
+    fetchLiveData();
+    const interval = setInterval(fetchLiveData, updateFrequency);
+    return () => clearInterval(interval);
   }, [graph.isPaused, updateFrequency, viewMode, graph.selectedTags.length]);
 
   const togglePause = () =>
     setGraph((prev) => ({ ...prev, isPaused: !prev.isPaused }));
 
   const toggleTag = (tag) => {
-    console.log("Toggling tag:", tag);
     setGraph((prev) => {
       const selected = prev.selectedTags.includes(tag)
         ? prev.selectedTags.filter((t) => t !== tag)
         : [...prev.selectedTags, tag];
-      
-      console.log("New selected tags:", selected);
       
       const tagSettings = { ...prev.tagSettings };
       if (!tagSettings[tag]) {
@@ -382,7 +312,6 @@ const ForkliftTrends = () => {
         📈 Forklift Trends {viewMode === "history" && <span style={{ fontSize: "16px", color: "#ffffff" }}>(Historical View)</span>}
       </h2>
 
-      {/* Debug Info */}
       {debugInfo && (
         <div style={{ 
           background: "#333", 
@@ -625,7 +554,6 @@ const ForkliftTrends = () => {
         )}
       </div>
 
-      {/* History Modal */}
       {showHistoryModal && (
         <div
           style={{
@@ -673,58 +601,32 @@ const ForkliftTrends = () => {
 
             <div style={{ marginBottom: "15px" }}>
               <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Start Date & Time:</label>
-              <div style={{ display: "flex", gap: "10px" }}>
-                <input
-                  type="date"
-                  value={historyStartDate}
-                  onChange={(e) => setHistoryStartDate(e.target.value)}
-                  style={{ 
-                    flex: 1, 
-                    padding: "8px", 
-                    borderRadius: "5px", 
-                    border: "1px solid #ccc"
-                  }}
-                />
-                <input
-                  type="time"
-                  value={historyStartTime}
-                  onChange={(e) => setHistoryStartTime(e.target.value)}
-                  style={{ 
-                    flex: 1, 
-                    padding: "8px", 
-                    borderRadius: "5px", 
-                    border: "1px solid #ccc"
-                  }}
-                />
-              </div>
+              <input
+                type="datetime-local"
+                value={historyStart}
+                onChange={(e) => setHistoryStart(e.target.value)}
+                style={{ 
+                  width: "100%", 
+                  padding: "8px", 
+                  borderRadius: "5px", 
+                  border: "1px solid #ccc"
+                }}
+              />
             </div>
 
             <div style={{ marginBottom: "15px" }}>
               <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>End Date & Time:</label>
-              <div style={{ display: "flex", gap: "10px" }}>
-                <input
-                  type="date"
-                  value={historyEndDate}
-                  onChange={(e) => setHistoryEndDate(e.target.value)}
-                  style={{ 
-                    flex: 1, 
-                    padding: "8px", 
-                    borderRadius: "5px", 
-                    border: "1px solid #ccc"
-                  }}
-                />
-                <input
-                  type="time"
-                  value={historyEndTime}
-                  onChange={(e) => setHistoryEndTime(e.target.value)}
-                  style={{ 
-                    flex: 1, 
-                    padding: "8px", 
-                    borderRadius: "5px", 
-                    border: "1px solid #ccc"
-                  }}
-                />
-              </div>
+              <input
+                type="datetime-local"
+                value={historyEnd}
+                onChange={(e) => setHistoryEnd(e.target.value)}
+                style={{ 
+                  width: "100%", 
+                  padding: "8px", 
+                  borderRadius: "5px", 
+                  border: "1px solid #ccc"
+                }}
+              />
             </div>
 
             <div style={{ marginBottom: "15px" }}>
@@ -790,7 +692,7 @@ const ForkliftTrends = () => {
             height: "100%", 
             color: "#999"
           }}>
-            Waiting for data... (Check console for debugging info)
+            Waiting for data...
           </div>
         ) : (
           <ResponsiveContainer>
