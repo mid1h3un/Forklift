@@ -4,61 +4,72 @@ import { useNavigate } from "react-router-dom";
 import "./index.css";
 
 export default function AuthPage() {
-  const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-const handleAuth = async () => {
-  try {
-    const endpoint = isLogin ? "/login" : "/register";
-    const res = await axios.post(`https://solvexesapp.com${endpoint}`, {
-      username,
-      password,
-    });
+  const API_BASE_URL = "https://solvexesapp.com";
 
-    if (isLogin) {
-      localStorage.setItem("token", res.data.access_token);
-      localStorage.setItem("username", username); // ✅ store username
-      navigate("/home");
-    } else {
-      alert("Registration successful! You can now log in.");
-      setIsLogin(true);
+  const handleLogin = async () => {
+    if (!username || !password) {
+      alert("Please enter both username and password");
+      return;
     }
-  } catch (err) {
-    alert(err.response?.data?.message || "Something went wrong");
-  }
-};
 
+    setLoading(true);
+    
+    try {
+      const res = await axios.post(`${API_BASE_URL}/login`, {
+        username,
+        password,
+      });
+
+      localStorage.setItem("token", res.data.access_token);
+      localStorage.setItem("username", username);
+      navigate("/home");
+    } catch (err) {
+      console.error("Login error:", err);
+      alert(err.response?.data?.message || "Invalid username or password");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleLogin();
+    }
+  };
 
   return (
     <div className="body">
-    <div className="auth-page">
-      <div className="auth-card">
-        
-        <p className="subtitle">
-          {isLogin ? "Please login to continue" : "Register to get started"}
-        </p>
+      <div className="auth-page">
+        <div className="auth-card">
+          <h1 className="title">Login</h1>
+          <p className="subtitle">Please login to continue</p>
 
-        <input
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <input
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+          <input
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={loading}
+          />
+          <input
+            placeholder="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={loading}
+          />
 
-        <button onClick={handleAuth}>
-          {isLogin ? "Login" : "Register"}
-        </button>
-
-        
+          <button onClick={handleLogin} disabled={loading}>
+            {loading ? "Loading..." : "Login"}
+          </button>
+        </div>
       </div>
-    </div>
     </div>
   );
 }
