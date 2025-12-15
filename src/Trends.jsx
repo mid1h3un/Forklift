@@ -11,12 +11,21 @@ import {
 } from "recharts";
 
 const ForkliftTrends = () => {
-  // Generate forklift tags: Forklift1_Speed, Forklift1_Voltage, etc.
+  // Forklift list with IMEIs
+  const forklifts = [
+    { name: "Forklift 1", imei: "867512077469365" },
+    { name: "Forklift 2", imei: "865931084963206" },
+    { name: "Forklift 3", imei: "865931084970326" },
+    { name: "Forklift 4", imei: "865931084979863" },
+    { name: "Forklift 5", imei: "865931084970615" }
+  ];
+
+  // Generate tags for all forklifts
   const availableTags = [];
-  for (let i = 1; i <= 10; i++) {
-    availableTags.push(`Forklift${i}_Speed`);
-    availableTags.push(`Forklift${i}_Voltage`);
-  }
+  forklifts.forEach(fl => {
+    availableTags.push(`${fl.name}_Speed`);
+    availableTags.push(`${fl.name}_Voltage`);
+  });
 
   const [graph, setGraph] = useState({
     data: [],
@@ -28,8 +37,8 @@ const ForkliftTrends = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [updateFrequency, setUpdateFrequency] = useState(1000);
-  const [frequencyValue, setFrequencyValue] = useState(1);
+  const [updateFrequency, setUpdateFrequency] = useState(2000);
+  const [frequencyValue, setFrequencyValue] = useState(2);
   const [frequencyUnit, setFrequencyUnit] = useState("seconds");
   
   // History modal states
@@ -40,104 +49,227 @@ const ForkliftTrends = () => {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [viewMode, setViewMode] = useState("live");
   const [historyAggregation, setHistoryAggregation] = useState("1s");
+  const [debugInfo, setDebugInfo] = useState("");
 
-  const API_BASE_URL = "https://www.solvexesapp.com/api";
+  const API_BASE_URL = "https://solvexesapp.com/api";
 
-  // Fetch live data
+  // Helper function to get IMEI from tag name
+  const getImeiFromTag = (tag) => {
+    // Tag format: "Forklift 1_Speed" or "Forklift 1_Voltage"
+    const parts = tag.split('_');
+    const forkliftName = parts[0]; // "Forklift 1"
+    const forklift = forklifts.find(f => f.name === forkliftName);
+    console.log(`Tag: ${tag} -> Forklift: ${forkliftName} -> IMEI: ${forklift?.imei}`);
+    return forklift?.imei;
+  };
+
+  // Fetch live data for all selected forklifts
   const fetchLiveData = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/latest`);
-      const data = await response.json();
+      console.log("=== Starting Live Data Fetch ===");
+      console.log("Selected tags:", graph.selectedTags);
+      
+      // Get unique IMEIs from selected tags
+      const uniqueImeis = [...new Set(
+        graph.selectedTags.map(tag => getImeiFromTag(tag)).filter(Boolean)
+      )];
 
-      // Map the API data (spd, volt) to all forklifts
-      const mockData = {};
-      for (let i = 1; i <= 10; i++) {
-        mockData[`Forklift${i}_Speed`] = parseFloat(data.spd) || 0;
-        mockData[`Forklift${i}_Voltage`] = parseFloat(data.volt) || 0;
+      console.log("Unique IMEIs to fetch:", uniqueImeis);
+
+      if (uniqueImeis.length === 0) {
+        console.log("No IMEIs to fetch");
+        return;
       }
 
-      const newPoint = {
-        Time: new Date().toLocaleTimeString(),
-        ...mockData,
-      };
+      // Fetch data for each IMEI
+      const dataPromises = uniqueImeis.map(async (imei) => {
+        try {
+          const url = `${API_BASE_URL}/latest?imei=${imei}`;
+          console.log(`Fetching: ${url}`);
+          
+          const response = await fetch(url);
+          console.log(`Response status for ${imei}:`, response.status);
+          
+          if (!response.ok) {
+            console.error(`HTTP error ${response.status} for ${imei}`);
+            return null;
+          }
+          
+          const data = await response.json();
+          console.log(`Data received for ${imei}:`, data);
+          return { imei, data };
+        } catch (err) {
+          console.error(`Error fetching data for ${imei}:`, err);
+          return null;
+        }
+      });
 
-      setGraph((prev) => ({
-        ...prev,
-        data: [...prev.data.slice(-19), newPoint],
-      }));
+      const results = await Promise.all(dataPromises);
+      console.log("All fetch results:", results);
+      
+      // Map results to tag structure
+      const newDataPoint = { 
+        Time: new Date().toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit"
+        })
+      };
+      
+      results.forEach(result => {
+        if (!result) return;
+        const { imei, data } = result;
+        const forklift = forklifts.find(f => f.imei === imei);
+        if (!forklift) {
+          console.log(`No forklift found for IMEI ${imei}`);
+          return;
+        }
+
+        const speedTag = `${forklift.name}_Speed`;
+        const voltageTag = `${forklift.name}_Voltage`;
+        
+        newDataPoint[speedTag] = parseFloat(data.spd) || 0;
+        newDataPoint[voltageTag] = parseFloat(data.volt) || 0;
+        
+        console.log(`Mapped data for ${forklift.name}:`, {
+          [speedTag]: newDataPoint[speedTag],
+          [voltageTag]: newDataPoint[voltageTag]
+        });
+      });
+
+      console.log("New data point:", newDataPoint);
+
+      setGraph((prev) => {
+        const updatedData = [...prev.data.slice(-19), newDataPoint];
+        console.log("Updated graph data length:", updatedData.length);
+        return {
+          ...prev,
+          data: updatedData,
+        };
+      });
+
+      setDebugInfo(`Last fetch: ${new Date().toLocaleTimeString()} - ${results.filter(r => r).length} devices`);
     } catch (error) {
-      console.error("Error fetching live data:", error.message);
+      console.error("Error fetching live data:", error);
+      setDebugInfo(`Error: ${error.message}`);
     }
   };
 
   // Fetch historical data
-  // Fetch historical data
-const fetchHistoryData = async () => {
-  if (!historyStartDate || !historyStartTime || !historyEndDate || !historyEndTime) {
-    alert("Please select both start and end date/time");
-    return;
-  }
-
-  const selectedTags = graph.selectedTags;
-  if (selectedTags.length === 0) {
-    alert("Please select at least one tag from the main tag selector");
-    return;
-  }
-
-  setIsLoadingHistory(true);
-
-  try {
-    const startDateTime = `${historyStartDate}T${historyStartTime}`;
-    const endDateTime = `${historyEndDate}T${historyEndTime}`;
-    
-    const params = new URLSearchParams({
-      start: startDateTime,
-      end: endDateTime,
-      tags: selectedTags.join(","),
-      aggregation: historyAggregation,
-    });
-
-    const url = `${API_BASE_URL}/history?${params}`;
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Failed to fetch data");
-    }
-
-    if (!data || data.length === 0) {
-      alert("No data found for the selected date range.");
-      setIsLoadingHistory(false);
+  const fetchHistoryData = async () => {
+    if (!historyStartDate || !historyStartTime || !historyEndDate || !historyEndTime) {
+      alert("Please select both start and end date/time");
       return;
     }
 
-    // ✅ Convert backend fields -> chart fields
-    const formattedData = data.map((item) => {
-      const d = { Time: item.time }; // time already formatted by backend
-      selectedTags.forEach((tag) => {
-        if (tag.includes("Speed")) d[tag] = item.spd || 0;
-        if (tag.includes("Voltage")) d[tag] = item.volt || 0;
+    const selectedTags = graph.selectedTags;
+    if (selectedTags.length === 0) {
+      alert("Please select at least one tag from the main tag selector");
+      return;
+    }
+
+    setIsLoadingHistory(true);
+
+    try {
+      const startDateTime = `${historyStartDate}T${historyStartTime}`;
+      const endDateTime = `${historyEndDate}T${historyEndTime}`;
+      
+      console.log("Fetching history:", { startDateTime, endDateTime, selectedTags });
+      
+      // Get unique IMEIs from selected tags
+      const uniqueImeis = [...new Set(
+        selectedTags.map(tag => getImeiFromTag(tag)).filter(Boolean)
+      )];
+
+      console.log("Historical IMEIs:", uniqueImeis);
+
+      if (uniqueImeis.length === 0) {
+        alert("No valid forklifts selected");
+        setIsLoadingHistory(false);
+        return;
+      }
+
+      // Fetch history for each IMEI
+      const historyPromises = uniqueImeis.map(async (imei) => {
+        try {
+          const params = new URLSearchParams({
+            start: startDateTime,
+            end: endDateTime,
+            imei: imei,
+            aggregation: historyAggregation,
+          });
+
+          const url = `${API_BASE_URL}/history?${params}`;
+          console.log(`Fetching history: ${url}`);
+          
+          const response = await fetch(url);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Failed to fetch history for ${imei}:`, errorText);
+            return { imei, data: [] };
+          }
+          
+          const data = await response.json();
+          console.log(`History data for ${imei}:`, data);
+          return { imei, data: Array.isArray(data) ? data : [] };
+        } catch (err) {
+          console.error(`Error fetching history for ${imei}:`, err);
+          return { imei, data: [] };
+        }
       });
-      return d;
-    });
 
-    setGraph((prev) => ({
-      ...prev,
-      data: formattedData,
-      isPaused: true,
-    }));
+      const results = await Promise.all(historyPromises);
+      console.log("All history results:", results);
 
-    setViewMode("history");
-    setShowHistoryModal(false);
-    alert(`Successfully loaded ${formattedData.length} data points`);
-  } catch (error) {
-    console.error("Error fetching history data:", error);
-    alert(`Failed to fetch historical data: ${error.message}`);
-  } finally {
-    setIsLoadingHistory(false);
-  }
-};
+      // Merge data from all IMEIs by timestamp
+      const timeMap = new Map();
 
+      results.forEach(({ imei, data }) => {
+        const forklift = forklifts.find(f => f.imei === imei);
+        if (!forklift || !data) return;
+
+        data.forEach(item => {
+          const time = item.time;
+          if (!timeMap.has(time)) {
+            timeMap.set(time, { Time: time });
+          }
+          
+          const point = timeMap.get(time);
+          point[`${forklift.name}_Speed`] = parseFloat(item.spd) || 0;
+          point[`${forklift.name}_Voltage`] = parseFloat(item.volt) || 0;
+        });
+      });
+
+      // Convert map to sorted array
+      const formattedData = Array.from(timeMap.values()).sort((a, b) => 
+        new Date(a.Time) - new Date(b.Time)
+      );
+
+      console.log("Formatted historical data:", formattedData);
+
+      if (formattedData.length === 0) {
+        alert("No data found for the selected date range.");
+        setIsLoadingHistory(false);
+        return;
+      }
+
+      setGraph((prev) => ({
+        ...prev,
+        data: formattedData,
+        isPaused: true,
+      }));
+
+      setViewMode("history");
+      setShowHistoryModal(false);
+      alert(`Successfully loaded ${formattedData.length} data points`);
+    } catch (error) {
+      console.error("Error fetching history data:", error);
+      alert(`Failed to fetch historical data: ${error.message}`);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
 
   // Export data as CSV
   const exportToCSV = () => {
@@ -173,22 +305,38 @@ const fetchHistoryData = async () => {
     setViewMode("live");
   };
 
+  // Live data fetching effect
   useEffect(() => {
+    if (viewMode !== "live" || graph.isPaused || graph.selectedTags.length === 0) {
+      console.log("Skipping fetch:", { viewMode, isPaused: graph.isPaused, tagCount: graph.selectedTags.length });
+      return;
+    }
+
+    console.log("Setting up live data fetch interval");
+    fetchLiveData(); // Immediate first fetch
+    
     const interval = setInterval(() => {
-      if (!graph.isPaused && viewMode === "live") fetchLiveData();
+      console.log("Interval tick - fetching live data");
+      fetchLiveData();
     }, updateFrequency);
 
-    return () => clearInterval(interval);
-  }, [graph.isPaused, updateFrequency, viewMode]);
+    return () => {
+      console.log("Cleaning up interval");
+      clearInterval(interval);
+    };
+  }, [graph.isPaused, updateFrequency, viewMode, graph.selectedTags.length]);
 
   const togglePause = () =>
     setGraph((prev) => ({ ...prev, isPaused: !prev.isPaused }));
 
   const toggleTag = (tag) => {
+    console.log("Toggling tag:", tag);
     setGraph((prev) => {
       const selected = prev.selectedTags.includes(tag)
         ? prev.selectedTags.filter((t) => t !== tag)
         : [...prev.selectedTags, tag];
+      
+      console.log("New selected tags:", selected);
       
       const tagSettings = { ...prev.tagSettings };
       if (!tagSettings[tag]) {
@@ -196,7 +344,7 @@ const fetchHistoryData = async () => {
         const isSpeed = tag.includes('Speed');
         tagSettings[tag] = { 
           color: colors[availableTags.indexOf(tag) % colors.length], 
-          scale: isSpeed ? 20 : 50, // Default scale based on metric type
+          scale: isSpeed ? 20 : 50,
           divisions: 5 
         };
       }
@@ -229,8 +377,25 @@ const fetchHistoryData = async () => {
   );
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif",background:"#1a1a2e"}}>
-      <h2 style={{color:"white"}}>📈 Forklift Trends {viewMode === "history" && <span style={{ fontSize: "16px", color: "#ffffffff" }}>(Historical View)</span>}</h2>
+    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif", background:"#1a1a2e", minHeight: "100vh" }}>
+      <h2 style={{color:"white"}}>
+        📈 Forklift Trends {viewMode === "history" && <span style={{ fontSize: "16px", color: "#ffffff" }}>(Historical View)</span>}
+      </h2>
+
+      {/* Debug Info */}
+      {debugInfo && (
+        <div style={{ 
+          background: "#333", 
+          color: "#0f0", 
+          padding: "8px", 
+          borderRadius: "4px", 
+          marginBottom: "10px",
+          fontFamily: "monospace",
+          fontSize: "12px"
+        }}>
+          {debugInfo} | Data points: {graph.data.length} | Selected: {graph.selectedTags.length} tags
+        </div>
+      )}
 
       <div style={{ marginBottom: "10px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
         <div style={{ position: "relative" }}>
@@ -319,7 +484,7 @@ const fetchHistoryData = async () => {
                   key={tag}
                   style={{
                     marginBottom: "8px",
-                    borderBottom: "1px solid #444",
+                    borderBottom: "1px solid #ddd",
                     paddingBottom: "8px",
                   }}
                 >
@@ -528,9 +693,7 @@ const fetchHistoryData = async () => {
                     flex: 1, 
                     padding: "8px", 
                     borderRadius: "5px", 
-                    border: "1px solid #667eea",
-                    background: "#1a1a2e",
-                    color: "white"
+                    border: "1px solid #ccc"
                   }}
                 />
               </div>
@@ -547,9 +710,7 @@ const fetchHistoryData = async () => {
                     flex: 1, 
                     padding: "8px", 
                     borderRadius: "5px", 
-                    border: "1px solid #667eea",
-                    background: "#1a1a2e",
-                    color: "white"
+                    border: "1px solid #ccc"
                   }}
                 />
                 <input
@@ -560,9 +721,7 @@ const fetchHistoryData = async () => {
                     flex: 1, 
                     padding: "8px", 
                     borderRadius: "5px", 
-                    border: "1px solid #667eea",
-                    background: "#1a1a2e",
-                    color: "white"
+                    border: "1px solid #ccc"
                   }}
                 />
               </div>
@@ -622,6 +781,16 @@ const fetchHistoryData = async () => {
             color: "#999"
           }}>
             Select tags to display data on the chart
+          </div>
+        ) : graph.data.length === 0 ? (
+          <div style={{ 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center", 
+            height: "100%", 
+            color: "#999"
+          }}>
+            Waiting for data... (Check console for debugging info)
           </div>
         ) : (
           <ResponsiveContainer>
