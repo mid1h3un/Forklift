@@ -80,13 +80,19 @@ const Report = () => {
     setReports([]);
 
     try {
+      // Convert datetime-local to ISO string with timezone
+      const startISO = new Date(startTime).toISOString();
+      const endISO = new Date(endTime).toISOString();
+      
+      console.log('Sending timestamps:', { startISO, endISO });
+
       const fetchPromises = selectedImeis.map(async (imei) => {
         const res = await fetch("https://solvexesapp.com/runtime-report", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
-            startTime, 
-            endTime, 
+            startTime: startISO, 
+            endTime: endISO, 
             imei 
           }),
         });
