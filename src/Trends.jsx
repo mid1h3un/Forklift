@@ -9,6 +9,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import "./Trends.css";
 
 const ForkliftTrends = () => {
   const forklifts = [
