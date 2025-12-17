@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Rnd } from "react-rnd";
+import logo from "./assets/cc.png";
 
 const ForkliftDashboard = () => {
   const forklifts = useMemo(() => ([
