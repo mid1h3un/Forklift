@@ -9,7 +9,10 @@
 }
 
 .report-card {
-  background: white;
+  background-image: url(assets/puzzle.jpg);
+  background-size: cover; /* Makes image cover the entire card */
+  background-position: center; /* Centers the image */
+  background-repeat: no-repeat; 
   width: 100%;
   max-width: 500px;
   padding: 20px;
