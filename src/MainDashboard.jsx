@@ -4,22 +4,23 @@ import TankTagDashboard from "./TankTagDashboard";
 import Trends from "./Trends";
 import Reports from "./Reports";
 import "./MainDashboard.css";
-
-
-
+import logo from "./assets/solvexes.png"
 const MainDashboard = () => {
   const [activeTab, setActiveTab] = useState("tanks");
-  const [showProfile, setShowProfile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
 
   const username = localStorage.getItem("username") || "guest";
-  const user = { name: username, email: `${username}@example.com` };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
     navigate("/");
+  };
+
+  // Replace this URL with your actual website URL
+  const handlePoweredByClick = () => {
+    window.open("https://solvexes.com/", "_blank");
   };
 
   return (
@@ -59,15 +60,25 @@ const MainDashboard = () => {
           >
             📑 {sidebarOpen && "Reports"}
           </button>
-
         </nav>
 
         <div className="sidebar-footer">
           <button
-            className="sidebar-btn profile"
-            onClick={() => setShowProfile(true)}
+            className="sidebar-btn powered-by"
+            onClick={handlePoweredByClick}
           >
-            👤 {sidebarOpen && "Profile"}
+            {sidebarOpen ? (
+              <div className="powered-by-content">
+                <span className="powered-text">Powered by:</span>
+                <img 
+                  src={logo} 
+                  alt="Company Logo" 
+                  className="powered-logo"
+                />
+              </div>
+            ) : (
+              <span className="logo-icon">⚡</span>
+            )}
           </button>
           <button className="sidebar-btn logout" onClick={handleLogout}>
             🚪 {sidebarOpen && "Logout"}
@@ -80,27 +91,7 @@ const MainDashboard = () => {
         {activeTab === "tanks" && <TankTagDashboard />}
         {activeTab === "Trends" && <Trends />}
         {activeTab === "Reports" && <Reports />}
-        {activeTab === "mimic" && <Mimic />}
       </main>
-
-      {/* Profile Modal */}
-      {showProfile && (
-        <div className="profile-modal">
-          <div className="profile-card">
-            <h3>👤 Profile</h3>
-            <p>
-              <strong>Name:</strong> {user.name}
-            </p>
-          
-            <button
-              className="close-profile"
-              onClick={() => setShowProfile(false)}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
