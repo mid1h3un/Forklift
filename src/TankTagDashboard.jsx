@@ -246,7 +246,7 @@ const ForkliftDashboard = () => {
     <div style={{ width: "100%", height: "100vh", display: "flex", flexDirection: "column", background: "#1a1a2e" }}>
       {/* Control Bar */}
       <div style={{
-        padding: "15px 20px",
+        padding: "1px 10px",
         background: "linear-gradient(135deg, #0a0a0aff 0%, #000000ff 100%)",
         boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
         display: "flex",
@@ -279,7 +279,7 @@ const ForkliftDashboard = () => {
           <button 
             onClick={() => setWidgets([])}
             style={{
-              padding: "1px 10px",
+              padding: "10px 20px",
               fontSize: "15px",
               border: "none",
               borderRadius: "8px",
