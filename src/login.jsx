@@ -11,7 +11,7 @@ export default function AuthPage() {
 
   const navigate = useNavigate();
 
-  const API_BASE_URL = "https://solvexesapp.com";
+  const API_BASE_URL = "https://www.solvexesapp.com";
 
   // Pre-warm the API on component mount
   useEffect(() => {
