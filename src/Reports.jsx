@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import jsPDF from "jspdf";
 import "./Report.css";
 import logo from './assets/cc.png';
-// Then use: doc.addImage(logo, 'PNG', 14, 5, 30, 20);
+
 const forklifts = [
   { name: "Forklift 1", imei: "867512077469365" },
   { name: "Forklift 2", imei: "865931084963206" },
@@ -81,12 +81,9 @@ const Report = () => {
     setReports([]);
 
     try {
-      // Convert datetime-local to ISO string with timezone
       const startISO = new Date(startTime).toISOString();
       const endISO = new Date(endTime).toISOString();
       
-      console.log('Sending timestamps:', { startISO, endISO });
-
       const fetchPromises = selectedImeis.map(async (imei) => {
         const res = await fetch("https://solvexesapp.com/runtime-report", {
           method: "POST",
@@ -141,96 +138,84 @@ const Report = () => {
   const downloadPDF = () => {
     if (reports.length === 0) return;
 
-try {
-  const doc = new jsPDF();
-  
-  // Add black navbar background
-  doc.setFillColor(0, 0, 0);
-  doc.rect(0, 0, 210, 20, 'F'); // Full width navbar
-  
-  // Add "Machine Runtime Report" title centered in navbar
-  doc.setTextColor(255, 255, 255); // White text
-  doc.setFontSize(18);
-  doc.setFont(undefined, 'bold');
-  const title = "Machine Runtime Report";
-  const titleWidth = doc.getTextWidth(title);
-  const centerX = (210 - titleWidth) / 2; // Center on page
-  doc.text(title, centerX, 18);
-  
-  // Add logo on the right side of navbar
-  const logoData = 'data:image/png;base64,YOUR_BASE64_STRING_HERE';
-  const logoWidth = 30;
-  const logoHeight = 20;
-  const logoX = 210 - logoWidth - 10; // 10mm margin from right edge
-  const logoY = 2; // 5mm from top
-  doc.addImage(logo, 'PNG', logoX, logoY, logoWidth, logoHeight);
-  
-  // Reset text color for rest of document
-  doc.setTextColor(0, 0, 0);
-  
-  // Report details - starts below navbar
-  doc.setFontSize(10);
-  doc.setFont(undefined, 'normal');
-  doc.text(`Period: ${formatDateTime(startTime)} to ${formatDateTime(endTime)}`, 14, 40);
-  doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 46);
-  
-  // Table headers
-  let yPos = 63;
-  const lineHeight = 8;
-  const col1 = 14;
-  const col2 = 100;
-  const col3 = 160;
-  
-  doc.setFontSize(10);
-  doc.setFont(undefined, 'bold');
-  doc.text("Forklift", col1, yPos);
-  doc.text("Running Hours", col2, yPos);
-  doc.text("Running Minutes", col3, yPos);
-  
-  yPos += 2;
-  doc.line(14, yPos, 195, yPos);
-  yPos += 6;
-  
-  // Table data
-  doc.setFont(undefined, 'normal');
-  reports.forEach((report) => {
-    if (yPos > 270) {
-      doc.addPage();
+    try {
+      const doc = new jsPDF();
       
-      // Add navbar to new page
+      const navbarHeight = 20;
       doc.setFillColor(0, 0, 0);
-      doc.rect(0, 0, 210, 30, 'F');
+      doc.rect(0, 0, 210, navbarHeight, 'F');
       
-      // Center title
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(18);
       doc.setFont(undefined, 'bold');
+      const title = "Machine Runtime Report";
       const titleWidth = doc.getTextWidth(title);
       const centerX = (210 - titleWidth) / 2;
-      doc.text(title, centerX, 18);
+      const titleY = navbarHeight / 2 + 4;
+      doc.text(title, centerX, titleY);
       
-      // Logo on right
-      doc.addImage(logoData, 'PNG', logoX, logoY, logoWidth, logoHeight);
+      const logoWidth = 25;
+      const logoHeight = 13;
+      const logoX = 210 - logoWidth - 10;
+      const logoY = (navbarHeight - logoHeight) / 2;
+      doc.addImage(logo, 'PNG', logoX, logoY, logoWidth, logoHeight);
       
-      // Reset for table content
       doc.setTextColor(0, 0, 0);
-      doc.setFont(undefined, 'normal');
-      doc.setFontSize(10);
       
-      yPos = 40; // Start below navbar on new page
-    }
-    
-    doc.text(report.name, col1, yPos);
-    doc.text((report.running_seconds / 3600).toFixed(2), col2, yPos);
-    doc.text(report.running_minutes.toFixed(2), col3, yPos);
-    yPos += lineHeight;
-  });
+      const contentStartY = navbarHeight + 10;
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Period: ${formatDateTime(startTime)} to ${formatDateTime(endTime)}`, 14, contentStartY);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, 14, contentStartY + 6);
+      
+      let yPos = contentStartY + 17;
+      const lineHeight = 8;
+      const col1 = 14;
+      const col2 = 100;
+      const col3 = 160;
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.text("Forklift", col1, yPos);
+      doc.text("Running Hours", col2, yPos);
+      doc.text("Running Minutes", col3, yPos);
+      
+      yPos += 2;
+      doc.line(14, yPos, 195, yPos);
+      yPos += 6;
+      
+      doc.setFont(undefined, 'normal');
+      reports.forEach((report) => {
+        if (yPos > 270) {
+          doc.addPage();
+          
+          doc.setFillColor(0, 0, 0);
+          doc.rect(0, 0, 210, navbarHeight, 'F');
+          
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(18);
+          doc.setFont(undefined, 'bold');
+          doc.text(title, centerX, titleY);
+          doc.addImage(logo, 'PNG', logoX, logoY, logoWidth, logoHeight);
+          
+          doc.setTextColor(0, 0, 0);
+          doc.setFont(undefined, 'normal');
+          doc.setFontSize(10);
+          
+          yPos = contentStartY;
+        }
+        
+        doc.text(report.name, col1, yPos);
+        doc.text((report.running_seconds / 3600).toFixed(2), col2, yPos);
+        doc.text(report.running_minutes.toFixed(2), col3, yPos);
+        yPos += lineHeight;
+      });
 
-  doc.save(`runtime_report_${Date.now()}.pdf`);
-} catch (error) {
-  console.error("Error generating PDF:", error);
-  alert("Failed to generate PDF. Please try again.");
-}
+      doc.save(`runtime_report_${Date.now()}.pdf`);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Failed to generate PDF. Please try again.");
+    }
   };
 
   const downloadCSV = () => {
@@ -271,152 +256,105 @@ try {
 
   return (
     <div className="report-container">
-      <div className="report-card">
-        <h2 className="title">Device Runtime Report</h2>
+      <div className="report-layout">
+        {/* Left Side - Input Form */}
+        <div className="report-card">
+          <h2 className="title">Runtime Report</h2>
 
-        <label className="label">Select Forklifts</label>
-        <div style={{ marginBottom: '15px' }}>
-          <button 
-            onClick={selectAll}
-            style={{
-              padding: '8px 16px',
-              marginBottom: '10px',
-              backgroundColor: '#3498db',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            {selectedImeis.length === forklifts.length ? 'Deselect All' : 'Select All'}
-          </button>
-          
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: '8px',
-            padding: '10px',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            maxHeight: '200px',
-            overflowY: 'auto'
-          }}>
-            {forklifts.map((forklift) => (
-              <label 
-                key={forklift.imei}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  cursor: 'pointer',
-                  padding: '5px'
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedImeis.includes(forklift.imei)}
-                  onChange={() => handleForkliftSelection(forklift.imei)}
-                  style={{ marginRight: '10px', cursor: 'pointer' }}
-                />
-                <span>{forklift.name}</span>
-              </label>
-            ))}
+          <label className="label">Select Forklifts</label>
+          <div className="forklift-selector">
+            <button onClick={selectAll} className="select-all-btn">
+              {selectedImeis.length === forklifts.length ? 'Deselect All' : 'Select All'}
+            </button>
+            
+            <div className="checkbox-container">
+              {forklifts.map((forklift) => (
+                <label key={forklift.imei} className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={selectedImeis.includes(forklift.imei)}
+                    onChange={() => handleForkliftSelection(forklift.imei)}
+                  />
+                  <span>{forklift.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <label className="label">Start Time</label>
+          <input
+            type="datetime-local"
+            className="input"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+          />
+
+          <label className="label">End Time</label>
+          <input
+            type="datetime-local"
+            className="input"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+          />
+
+          {error && <div className="error-message">{error}</div>}
+
+          <div className="action-buttons">
+            <button className="btn" onClick={getReport} disabled={loading}>
+              {loading ? "Loading..." : "Get Report"}
+            </button>
+            <button className="btn clear-btn" onClick={clearAll}>
+              Clear All
+            </button>
           </div>
         </div>
 
-        <label className="label">Start Time</label>
-        <input
-          type="datetime-local"
-          className="input"
-          value={startTime}
-          onChange={(e) => setStartTime(e.target.value)}
-        />
-
-        <label className="label">End Time</label>
-        <input
-          type="datetime-local"
-          className="input"
-          value={endTime}
-          onChange={(e) => setEndTime(e.target.value)}
-        />
-
-        {error && (
-          <div style={{ 
-            color: '#e74c3c', 
-            padding: '10px', 
-            marginTop: '10px',
-            backgroundColor: '#fadbd8',
-            borderRadius: '4px'
-          }}>
-            {error}
-          </div>
-        )}
-
-        <button className="btn" onClick={getReport} disabled={loading}>
-          {loading ? "Loading..." : "Get Report"}
-        </button>
-
-        {(reports.length > 0 || startTime || endTime || selectedImeis.length > 0) && (
-          <button 
-            className="btn" 
-            onClick={clearAll}
-            style={{
-              backgroundColor: '#e74c3c',
-              marginTop: '10px'
-            }}
-          >
-            Clear All
-          </button>
-        )}
-
-        {reports.length > 0 && (
-          <div className="result-box">
-            <h3>Report Results</h3>
-            
-            <div style={{ 
-              maxHeight: '400px', 
-              overflowY: 'auto',
-              overflowX: 'auto',
-              border: '1px solid #ddd',
-              borderRadius: '4px'
-            }}>
-              <table style={{ 
-                width: '100%', 
-                borderCollapse: 'collapse',
-                marginTop: '0'
-              }}>
-                <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
-                  <tr style={{ backgroundColor: '#3498db', color: 'white' }}>
-                    <th style={{ padding: '10px', textAlign: 'left', border: '1px solid #ddd' }}>Forklift</th>
-                    <th style={{ padding: '10px', textAlign: 'left', border: '1px solid #ddd' }}>Running Hours</th>
-                    <th style={{ padding: '10px', textAlign: 'left', border: '1px solid #ddd' }}>Running Minutes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reports.map((report, idx) => (
-                    <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? '#f9f9f9' : 'white' }}>
-                      <td style={{ padding: '10px', border: '1px solid #ddd' }}>{report.name}</td>
-                      <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                        {(report.running_seconds / 3600).toFixed(2)}
-                      </td>
-                      <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                        {report.running_minutes.toFixed(2)}
-                      </td>
+        {/* Right Side - Results Panel */}
+        <div className="results-panel">
+          {reports.length > 0 ? (
+            <div className="result-box">
+              <h3>Report Results</h3>
+              
+              <div className="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Forklift</th>
+                      <th>Running Hours</th>
+                      <th>Running Minutes</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {reports.map((report, idx) => (
+                      <tr key={idx}>
+                        <td>{report.name}</td>
+                        <td>{(report.running_seconds / 3600).toFixed(2)}</td>
+                        <td>{report.running_minutes.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-            <div className="button-row" style={{ marginTop: '20px' }}>
-              <button className="btn pdf" onClick={downloadPDF}>
-                Download PDF
-              </button>
-              <button className="btn csv" onClick={downloadCSV}>
-                Download CSV
-              </button>
+              <div className="button-row">
+                <button className="btn pdf" onClick={downloadPDF}>
+                  Download PDF
+                </button>
+                <button className="btn csv" onClick={downloadCSV}>
+                  Download CSV
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="no-results">
+              <div className="no-results-icon">📊</div>
+              <div className="no-results-text">No Results Yet</div>
+              <div className="no-results-subtext">
+                Select forklifts, choose a time period, and click "Get Report" to view results here
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
