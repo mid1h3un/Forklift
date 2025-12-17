@@ -246,7 +246,7 @@ const ForkliftDashboard = () => {
       {/* Control Bar */}
       <div style={{
         padding: "15px 20px",
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        background: "linear-gradient(135deg, #0a0a0aff 0%, #000000ff 100%)",
         boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
         display: "flex",
         gap: "15px",
@@ -278,7 +278,7 @@ const ForkliftDashboard = () => {
           <button 
             onClick={() => setWidgets([])}
             style={{
-              padding: "10px 20px",
+              padding: "1px 10px",
               fontSize: "15px",
               border: "none",
               borderRadius: "8px",
@@ -295,9 +295,27 @@ const ForkliftDashboard = () => {
           </button>
         )}
 
-        <div style={{ color: "white", fontSize: "14px", marginLeft: "auto" }}>
-          {widgets.length} widget{widgets.length !== 1 ? 's' : ''} active
-        </div>
+        <div
+          style={{
+              marginLeft: "auto",
+              display: "flex",
+              alignItems: "center",
+              gap: "30px",
+              color: "white",
+              fontSize: "14px",
+              fontWeight: "500"
+            }}
+      >
+      
+      <img
+        src={logo}
+        alt="Logo"
+        style={{
+        height: "60px",
+        objectFit: "contain",
+      }}
+    />
+  </div>
       </div>
 
       {/* Dashboard Area */}
