@@ -7,14 +7,15 @@ export default function AuthPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const API_BASE_URL = "https://solvexesapp.com";
 
   const handleAuth = async () => {
     if (!username || !password) {
-      alert("Please enter both username and password");
-      return;
+      setError("Username and password are required");
+    return;
     }
 
     setLoading(true);
@@ -30,7 +31,7 @@ export default function AuthPage() {
       navigate("/home");
     } catch (err) {
       console.error("Auth error:", err);
-      alert(err.response?.data?.message || "Invalid username or password");
+      setError(err.response?.data?.message || "Invalid username or password");
     } finally {
       setLoading(false);
     }
