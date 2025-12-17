@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./index.css";
@@ -13,6 +13,19 @@ export default function AuthPage() {
 
   const API_BASE_URL = "https://solvexesapp.com";
 
+  // Pre-warm the API on component mount
+  useEffect(() => {
+    const warmUpAPI = async () => {
+      try {
+        await axios.get(`${API_BASE_URL}/`, { timeout: 5000 });
+        console.log("API warmed up successfully");
+      } catch (err) {
+        console.log("API warm-up attempt completed");
+      }
+    };
+    warmUpAPI();
+  }, []);
+
   const handleAuth = async (retryCount = 0) => {
     if (!username || !password) {
       setError("Username and password are required");
@@ -22,51 +35,66 @@ export default function AuthPage() {
     setError("");
     setLoading(true);
 
-    try {
-      // Add timeout to the request
-      const res = await axios.post(`${API_BASE_URL}/login`, {
-        username,
-        password,
-      }, {
-        timeout: 10000, // 10 second timeout
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
+    console.log(`Login attempt ${retryCount + 1}`, { username, endpoint: `${API_BASE_URL}/login` });
 
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/login`,
+        {
+          username,
+          password,
+        },
+        {
+          timeout: 15000,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          withCredentials: false,
+        }
+      );
+
+      console.log("Login successful:", res.data);
       localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("username", username);
       navigate("/home");
     } catch (err) {
-      console.error("Auth error:", err);
-      
-      // More aggressive retry logic - retry up to 2 times
+      console.error("Auth error details:", {
+        message: err.message,
+        code: err.code,
+        response: err.response?.data,
+        status: err.response?.status
+      });
+
       const shouldRetry = retryCount < 2 && (
         err.code === 'ERR_NETWORK' || 
         err.code === 'ECONNABORTED' ||
         err.message.includes('Network Error') ||
         err.message.includes('timeout') ||
-        !err.response // No response means network issue
+        err.response?.status === 502 ||
+        err.response?.status === 503 ||
+        err.response?.status === 504 ||
+        !err.response
       );
-      
+
       if (shouldRetry) {
         setError(`Connection issue, retrying... (Attempt ${retryCount + 2}/3)`);
         setTimeout(() => handleAuth(retryCount + 1), 2000);
         return;
       }
-      
-      // If it's a 500 error, also retry once
+
       if (retryCount === 0 && err.response?.status >= 500) {
         setError("Server error, retrying...");
         setTimeout(() => handleAuth(1), 2000);
         return;
       }
-      
-      setError(err.response?.data?.message || "Something went wrong. Please try again.");
-    } finally {
-      if (retryCount >= 2) {
-        setLoading(false);
-      }
+
+      const errorMessage = err.response?.data?.message || 
+                          err.response?.data?.detail || 
+                          err.message || 
+                          "Something went wrong. Please try again.";
+      setError(errorMessage);
+      setLoading(false);
     }
   };
 
