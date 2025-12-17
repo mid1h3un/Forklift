@@ -102,6 +102,7 @@
 
 .sidebar-btn.logout {
   color: #ffdddd;
+  background: linear-gradient(135deg, #ec452f 0%, #fc6950 100%);
 }
 
 .sidebar-btn.profile {
@@ -126,36 +127,63 @@
   padding: 20px;
 }
 
-/* === PROFILE MODAL === */
-.profile-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+/* Powered By Button Styles */
+.sidebar-btn.powered-by {
+  background: linear-gradient(135deg, #f0f2f7 0%, #b5b2b8 100%);
+  color: rgb(15, 15, 15);
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
 }
 
-.profile-card {
-  background: white;
-  border-radius: 12px;
-  padding: 20px 24px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  width: 280px;
-  text-align: center;
+.sidebar-btn.powered-by:hover {
+  background: linear-gradient(135deg, #b5b2b8 100%,#f0f2f7 0%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
-.close-profile {
-  margin-top: 12px;
-  background: #1a73e8;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
+.powered-by-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
 }
 
-.close-profile:hover {
-  background: #155ab6;
+.powered-text {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.9;
+}
+
+.powered-logo {
+  height: 30px;
+  width: auto;
+  max-width: 120px;
+  object-fit: contain; /* Makes logo white */
+}
+
+/* When sidebar is closed */
+.sidebar.closed .logo-icon {
+  font-size: 20px;
+}
+
+/* Alternative style if you want the logo and text side by side */
+.powered-by-content.horizontal {
+  flex-direction: row;
+  gap: 8px;
+}
+
+.powered-by-content.horizontal .powered-text {
+  font-size: 12px;
+}
+
+.powered-by-content.horizontal .powered-logo {
+  height: 24px;
 }
