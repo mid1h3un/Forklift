@@ -49,8 +49,9 @@ export default function AuthPage() {
         <div className="auth-card">
           <h1 className="title">Login</h1>
           <p className="subtitle">Please login to continue</p>
-
+          
           {/* Username */}
+          {error && <p className="error-text">{error}</p>}
           <div className="input-group">
             <span className="input-icon">
               <svg viewBox="0 0 24 24">
