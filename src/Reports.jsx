@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import jsPDF from "jspdf";
 import "./Report.css";
-
+import logo from './assets/cc.png';
+// Then use: doc.addImage(logo, 'PNG', 14, 5, 30, 20);
 const forklifts = [
   { name: "Forklift 1", imei: "867512077469365" },
   { name: "Forklift 2", imei: "865931084963206" },
@@ -140,51 +141,96 @@ const Report = () => {
   const downloadPDF = () => {
     if (reports.length === 0) return;
 
-    try {
-      const doc = new jsPDF();
+try {
+  const doc = new jsPDF();
+  
+  // Add black navbar background
+  doc.setFillColor(0, 0, 0);
+  doc.rect(0, 0, 210, 20, 'F'); // Full width navbar
+  
+  // Add "Machine Runtime Report" title centered in navbar
+  doc.setTextColor(255, 255, 255); // White text
+  doc.setFontSize(18);
+  doc.setFont(undefined, 'bold');
+  const title = "Machine Runtime Report";
+  const titleWidth = doc.getTextWidth(title);
+  const centerX = (210 - titleWidth) / 2; // Center on page
+  doc.text(title, centerX, 18);
+  
+  // Add logo on the right side of navbar
+  const logoData = 'data:image/png;base64,YOUR_BASE64_STRING_HERE';
+  const logoWidth = 30;
+  const logoHeight = 20;
+  const logoX = 210 - logoWidth - 10; // 10mm margin from right edge
+  const logoY = 2; // 5mm from top
+  doc.addImage(logo, 'PNG', logoX, logoY, logoWidth, logoHeight);
+  
+  // Reset text color for rest of document
+  doc.setTextColor(0, 0, 0);
+  
+  // Report details - starts below navbar
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'normal');
+  doc.text(`Period: ${formatDateTime(startTime)} to ${formatDateTime(endTime)}`, 14, 40);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 46);
+  
+  // Table headers
+  let yPos = 63;
+  const lineHeight = 8;
+  const col1 = 14;
+  const col2 = 100;
+  const col3 = 160;
+  
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'bold');
+  doc.text("Forklift", col1, yPos);
+  doc.text("Running Hours", col2, yPos);
+  doc.text("Running Minutes", col3, yPos);
+  
+  yPos += 2;
+  doc.line(14, yPos, 195, yPos);
+  yPos += 6;
+  
+  // Table data
+  doc.setFont(undefined, 'normal');
+  reports.forEach((report) => {
+    if (yPos > 270) {
+      doc.addPage();
       
+      // Add navbar to new page
+      doc.setFillColor(0, 0, 0);
+      doc.rect(0, 0, 210, 30, 'F');
+      
+      // Center title
+      doc.setTextColor(255, 255, 255);
       doc.setFontSize(18);
-      doc.text("Machine Runtime Report", 14, 20);
-      
-      doc.setFontSize(10);
-      doc.text(`Period: ${formatDateTime(startTime)}`, 14, 32);
-      doc.text(`        to ${formatDateTime(endTime)}`, 14, 38);
-      doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 44);
-      
-      let yPos = 55;
-      const lineHeight = 8;
-      const col1 = 14;
-      const col2 = 100;
-      const col3 = 160;
-      
-      doc.setFontSize(10);
       doc.setFont(undefined, 'bold');
-      doc.text("Forklift", col1, yPos);
-      doc.text("Running Hours", col2, yPos);
-      doc.text("Running Minutes", col3, yPos);
+      const titleWidth = doc.getTextWidth(title);
+      const centerX = (210 - titleWidth) / 2;
+      doc.text(title, centerX, 18);
       
-      yPos += 2;
-      doc.line(14, yPos, 195, yPos);
-      yPos += 6;
+      // Logo on right
+      doc.addImage(logoData, 'PNG', logoX, logoY, logoWidth, logoHeight);
       
+      // Reset for table content
+      doc.setTextColor(0, 0, 0);
       doc.setFont(undefined, 'normal');
-      reports.forEach((report) => {
-        if (yPos > 270) {
-          doc.addPage();
-          yPos = 20;
-        }
-        
-        doc.text(report.name, col1, yPos);
-        doc.text((report.running_seconds / 3600).toFixed(2), col2, yPos);
-        doc.text(report.running_minutes.toFixed(2), col3, yPos);
-        yPos += lineHeight;
-      });
-
-      doc.save(`runtime_report_${Date.now()}.pdf`);
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      alert("Failed to generate PDF. Please try again.");
+      doc.setFontSize(10);
+      
+      yPos = 40; // Start below navbar on new page
     }
+    
+    doc.text(report.name, col1, yPos);
+    doc.text((report.running_seconds / 3600).toFixed(2), col2, yPos);
+    doc.text(report.running_minutes.toFixed(2), col3, yPos);
+    yPos += lineHeight;
+  });
+
+  doc.save(`runtime_report_${Date.now()}.pdf`);
+} catch (error) {
+  console.error("Error generating PDF:", error);
+  alert("Failed to generate PDF. Please try again.");
+}
   };
 
   const downloadCSV = () => {
@@ -226,7 +272,7 @@ const Report = () => {
   return (
     <div className="report-container">
       <div className="report-card">
-        <h2 className="title">Runtime Report</h2>
+        <h2 className="title">Device Runtime Report</h2>
 
         <label className="label">Select Forklifts</label>
         <div style={{ marginBottom: '15px' }}>
