@@ -226,7 +226,7 @@ const Report = () => {
   return (
     <div className="report-container">
       <div className="report-card">
-        <h2 className="title">Device Runtime Report</h2>
+        <h2 className="title">Runtime Report</h2>
 
         <label className="label">Select Forklifts</label>
         <div style={{ marginBottom: '15px' }}>
