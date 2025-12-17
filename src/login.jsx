@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import "./index.css";
 
 export default function AuthPage() {
-  const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,10 +23,8 @@ export default function AuthPage() {
     setLoading(true);
 
     try {
-      const endpoint = isLogin ? "/login" : "/register";
-      
       // Add timeout to the request
-      const res = await axios.post(`${API_BASE_URL}${endpoint}`, {
+      const res = await axios.post(`${API_BASE_URL}/login`, {
         username,
         password,
       }, {
@@ -37,15 +34,9 @@ export default function AuthPage() {
         }
       });
 
-      if (isLogin) {
-        localStorage.setItem("token", res.data.access_token);
-        localStorage.setItem("username", username);
-        navigate("/home");
-      } else {
-        setError("Registration successful! You can now log in.");
-        setIsLogin(true);
-        setPassword("");
-      }
+      localStorage.setItem("token", res.data.access_token);
+      localStorage.setItem("username", username);
+      navigate("/home");
     } catch (err) {
       console.error("Auth error:", err);
       
@@ -89,10 +80,8 @@ export default function AuthPage() {
     <div className="body">
       <div className="auth-page">
         <div className="auth-card">
-          <h1 className="title">{isLogin ? "Login" : "Register"}</h1>
-          <p className="subtitle">
-            {isLogin ? "Please login to continue" : "Register to get started"}
-          </p>
+          <h1 className="title">Login</h1>
+          <p className="subtitle">Please login to continue</p>
           {error && <p className="error-text">{error}</p>}
 
           <div className="input-group">
@@ -129,27 +118,8 @@ export default function AuthPage() {
           </div>
 
           <button onClick={handleAuth} disabled={loading}>
-            {loading ? "Loading..." : isLogin ? "Login" : "Register"}
+            {loading ? "Loading..." : "Login"}
           </button>
-
-          <p style={{ marginTop: '15px', textAlign: 'center' }}>
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <span 
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setPassword("");
-                setError("");
-              }}
-              style={{ 
-                color: '#3498db', 
-                cursor: 'pointer', 
-                fontWeight: 'bold',
-                textDecoration: 'underline'
-              }}
-            >
-              {isLogin ? "Register" : "Login"}
-            </span>
-          </p>
         </div>
       </div>
     </div>
