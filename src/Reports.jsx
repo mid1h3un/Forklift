@@ -19,6 +19,14 @@ const Report = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Convert seconds to H:M:S format
+  const formatRunningTime = (seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.round(seconds % 60);
+    return `${hours}h ${minutes}m ${secs}s`;
+  };
+
   const handleForkliftSelection = (imei) => {
     setSelectedImeis(prev => {
       if (prev.includes(imei)) {
@@ -171,14 +179,12 @@ const Report = () => {
       let yPos = contentStartY + 17;
       const lineHeight = 8;
       const col1 = 14;
-      const col2 = 100;
-      const col3 = 160;
+      const col2 = 120;
       
       doc.setFontSize(10);
       doc.setFont(undefined, 'bold');
       doc.text("Forklift", col1, yPos);
-      doc.text("Running Hours", col2, yPos);
-      doc.text("Running Minutes", col3, yPos);
+      doc.text("Total Running Time", col2, yPos);
       
       yPos += 2;
       doc.line(14, yPos, 195, yPos);
@@ -206,8 +212,7 @@ const Report = () => {
         }
         
         doc.text(report.name, col1, yPos);
-        doc.text((report.running_seconds / 3600).toFixed(2), col2, yPos);
-        doc.text(report.running_minutes.toFixed(2), col3, yPos);
+        doc.text(formatRunningTime(report.running_seconds), col2, yPos);
         yPos += lineHeight;
       });
 
@@ -227,13 +232,14 @@ const Report = () => {
         `Period: ${formatDateTime(startTime)} - ${formatDateTime(endTime)}`,
         `Generated: ${new Date().toLocaleString()}`,
         "",
-        "Forklift,IMEI,Running Hours,Running Minutes"
+        "Forklift,IMEI,Total Running Time,Running Hours,Running Minutes,Running Seconds"
       ];
 
       reports.forEach(report => {
         const hours = (report.running_seconds / 3600).toFixed(2);
+        const formattedTime = formatRunningTime(report.running_seconds);
         csvRows.push(
-          `${report.name},${report.imei},${hours},${report.running_minutes}`
+          `${report.name},${report.imei},${formattedTime},${hours},${report.running_minutes},${report.running_seconds}`
         );
       });
 
@@ -320,16 +326,14 @@ const Report = () => {
                   <thead>
                     <tr>
                       <th>Forklift</th>
-                      <th>Running Hours</th>
-                      <th>Running Minutes</th>
+                      <th>Total Running Time</th>
                     </tr>
                   </thead>
                   <tbody>
                     {reports.map((report, idx) => (
                       <tr key={idx}>
                         <td>{report.name}</td>
-                        <td>{(report.running_seconds / 3600).toFixed(2)}</td>
-                        <td>{report.running_minutes.toFixed(2)}</td>
+                        <td>{formatRunningTime(report.running_seconds)}</td>
                       </tr>
                     ))}
                   </tbody>
