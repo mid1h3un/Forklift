@@ -148,7 +148,7 @@ const ForkliftDashboard = () => {
     }
     
     // Set up interval
-    fetchIntervalRef.current = setInterval(fetchData, 2000);
+    fetchIntervalRef.current = setInterval(fetchData, 20000);
 
     return () => {
       if (fetchIntervalRef.current) {
