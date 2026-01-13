@@ -36,8 +36,8 @@ const ForkliftTrends = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [updateFrequency, setUpdateFrequency] = useState(2000);
-  const [frequencyValue, setFrequencyValue] = useState(2);
+  const [updateFrequency, setUpdateFrequency] = useState(20000);
+  const [frequencyValue, setFrequencyValue] = useState(20);
   const [frequencyUnit, setFrequencyUnit] = useState("seconds");
   
   const [historyStart, setHistoryStart] = useState("");
