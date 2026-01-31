@@ -96,6 +96,7 @@
   min-width: 140px;
   justify-content: space-between;
   transition: all 0.2s;
+  height: 38px;
 }
 
 .dropdown-button:hover {
@@ -126,7 +127,6 @@
   align-items: center;
   padding: 8px 12px;
   cursor: pointer;
-  -webkit-user-select: none;
   user-select: none;
   transition: background-color 0.15s;
 }
@@ -169,6 +169,7 @@
   background-color: white;
   cursor: pointer;
   min-width: 140px;
+  height: 40px;
 }
 
 .datetime-input {
