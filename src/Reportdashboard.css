@@ -22,29 +22,11 @@
   flex-direction: column;
 }
 
-/* Header Section */
-.header-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-/* Title Styles */
-.main-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #1f2937;
-  margin: 0;
-}
-
 /* Download Button */
 .download-button {
   background-color: #10b981;
   color: white;
-  padding: 10px 20px;
+  padding: 8px 20px;
   border-radius: 6px;
   border: none;
   cursor: pointer;
@@ -52,8 +34,10 @@
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   transition: background-color 0.2s;
+  white-space: nowrap;
+  height: 38px;
 }
 
 .download-button:hover {
@@ -61,7 +45,7 @@
 }
 
 .download-icon {
-  font-size: 1.125rem;
+  font-size: 1rem;
 }
 
 /* Filters Section */
@@ -175,7 +159,8 @@
 
 /* Select and Date Inputs */
 .select-input,
-.date-input {
+.date-input,
+.datetime-input {
   padding: 8px 12px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
@@ -186,8 +171,13 @@
   min-width: 140px;
 }
 
+.datetime-input {
+  min-width: 180px;
+}
+
 .select-input:focus,
-.date-input:focus {
+.date-input:focus,
+.datetime-input:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
@@ -383,16 +373,6 @@
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
-  .header-section {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .download-button {
-    width: 100%;
-    justify-content: center;
-  }
-
   .filters-row {
     flex-direction: column;
     align-items: stretch;
@@ -404,12 +384,14 @@
 
   .select-input,
   .date-input,
+  .datetime-input,
   .dropdown-button {
     width: 100%;
     min-width: auto;
   }
 
-  .apply-button {
+  .apply-button,
+  .download-button {
     width: 100%;
   }
 }
