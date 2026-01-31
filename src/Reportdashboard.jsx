@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
@@ -11,8 +11,8 @@ export default function ForkliftTracker() {
   const [error, setError] = useState(null);
   const [selectedForklifts, setSelectedForklifts] = useState(['t5', 't9', 't7', 't4', 'd1']);
   const [dateRange, setDateRange] = useState('14');
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
+  const [customStartDateTime, setCustomStartDateTime] = useState('');
+  const [customEndDateTime, setCustomEndDateTime] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [dataCache, setDataCache] = useState({});
   const [lastFetchParams, setLastFetchParams] = useState(null);
@@ -38,14 +38,23 @@ export default function ForkliftTracker() {
     return dates;
   };
 
-  const generateCustomDateRange = (startDate, endDate) => {
+  const generateCustomDateRange = (startDateTime, endDateTime) => {
     const dates = [];
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const start = new Date(startDateTime);
+    const end = new Date(endDateTime);
     
-    for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-      dates.push(new Date(date));
+    // Get the start hour for the monitoring window
+    const startHour = start.getHours();
+    
+    // Generate dates for the range
+    const currentDate = new Date(start);
+    currentDate.setHours(startHour, 0, 0, 0);
+    
+    while (currentDate <= end) {
+      dates.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
     }
+    
     return dates;
   };
 
@@ -84,7 +93,7 @@ export default function ForkliftTracker() {
 
       // Generate cache key based on date range parameters
       const cacheKey = dateRange === 'custom' 
-        ? `custom_${customStartDate}_${customEndDate}`
+        ? `custom_${customStartDateTime}_${customEndDateTime}`
         : `range_${dateRange}`;
 
       // Check if we already have this data and parameters haven't changed
@@ -95,8 +104,10 @@ export default function ForkliftTracker() {
       }
 
       let dates;
-      if (dateRange === 'custom' && customStartDate && customEndDate) {
-        dates = generateCustomDateRange(customStartDate, customEndDate);
+      let isCustomRange = dateRange === 'custom' && customStartDateTime && customEndDateTime;
+      
+      if (isCustomRange) {
+        dates = generateCustomDateRange(customStartDateTime, customEndDateTime);
       } else {
         dates = generateDateRange(parseInt(dateRange));
       }
@@ -104,11 +115,36 @@ export default function ForkliftTracker() {
       const chartData = [];
 
       for (const date of dates) {
-        const startOfDay = new Date(date);
-        startOfDay.setHours(0, 0, 0, 0);
+        let startOfDay, endOfDay;
         
-        const endOfDay = new Date(date);
-        endOfDay.setHours(23, 59, 59, 999);
+        // For custom range, use the exact datetime values provided by user
+        if (isCustomRange) {
+          const startDT = new Date(customStartDateTime);
+          const endDT = new Date(customEndDateTime);
+          
+          // Use the exact start datetime from the user input
+          startOfDay = new Date(date);
+          startOfDay.setHours(startDT.getHours(), startDT.getMinutes(), 0, 0);
+          
+          // For the end time, if it's the last date in range, use exact end datetime
+          // Otherwise use 24 hours from start time
+          const isLastDate = date.toDateString() === new Date(customEndDateTime).toDateString();
+          
+          if (isLastDate) {
+            endOfDay = new Date(customEndDateTime);
+          } else {
+            endOfDay = new Date(startOfDay);
+            endOfDay.setDate(endOfDay.getDate() + 1);
+          }
+        } else {
+          // Default 6 AM to 6 AM window for preset ranges
+          startOfDay = new Date(date);
+          startOfDay.setHours(6, 0, 0, 0);
+          
+          endOfDay = new Date(date);
+          endOfDay.setDate(endOfDay.getDate() + 1);
+          endOfDay.setHours(5, 59, 59, 999);
+        }
 
         const startTime = startOfDay.toISOString();
         const endTime = endOfDay.toISOString();
@@ -118,7 +154,7 @@ export default function ForkliftTracker() {
         };
 
         // Create a cache key for this specific date and forklift combination
-        const dateCacheKey = `${formatDate(date)}`;
+        const dateCacheKey = `${formatDate(date)}_${startTime}_${endTime}`;
         
         const promises = forklifts.map(async (forklift) => {
           const forkliftCacheKey = `${dateCacheKey}_${forklift.imei}`;
@@ -211,10 +247,12 @@ export default function ForkliftTracker() {
     // Add date range info
     doc.setFontSize(11);
     let dateInfo = '';
-    if (dateRange === 'custom' && customStartDate && customEndDate) {
-      dateInfo = `Date Range: ${customStartDate} to ${customEndDate}`;
+    if (dateRange === 'custom' && customStartDateTime && customEndDateTime) {
+      const startDT = new Date(customStartDateTime);
+      const endDT = new Date(customEndDateTime);
+      dateInfo = `Date Range: ${startDT.toLocaleString()} to ${endDT.toLocaleString()}`;
     } else {
-      dateInfo = `Date Range: Last ${dateRange} days`;
+      dateInfo = `Date Range: Last ${dateRange} days (6 AM to 6 AM)`;
     }
     doc.text(dateInfo, 14, 32);
     
@@ -376,19 +414,19 @@ export default function ForkliftTracker() {
                 <div className="filter-item">
                   <label className="filter-label">From:</label>
                   <input
-                    type="date"
-                    value={customStartDate}
-                    onChange={(e) => setCustomStartDate(e.target.value)}
-                    className="date-input"
+                    type="datetime-local"
+                    value={customStartDateTime}
+                    onChange={(e) => setCustomStartDateTime(e.target.value)}
+                    className="datetime-input"
                   />
                 </div>
                 <div className="filter-item">
                   <label className="filter-label">To:</label>
                   <input
-                    type="date"
-                    value={customEndDate}
-                    onChange={(e) => setCustomEndDate(e.target.value)}
-                    className="date-input"
+                    type="datetime-local"
+                    value={customEndDateTime}
+                    onChange={(e) => setCustomEndDateTime(e.target.value)}
+                    className="datetime-input"
                   />
                 </div>
               </>
@@ -401,7 +439,7 @@ export default function ForkliftTracker() {
 
             {/* Download Button */}
             <button onClick={downloadPDF} className="download-button">
-              <span className="download-icon">⬇</span> Download PDF
+              <span className="download-icon">📄</span> Download PDF
             </button>
           </div>
         </div>
@@ -439,7 +477,7 @@ export default function ForkliftTracker() {
           <div className="chart-container">
             <h2 className="chart-title">Usage Over Time</h2>
             <ResponsiveContainer width="100%" height={350}>
-              <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
+              <BarChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis 
                   dataKey="date" 
@@ -454,59 +492,43 @@ export default function ForkliftTracker() {
                   verticalAlign="bottom"
                   height={25}
                   wrapperStyle={{ paddingTop: '5px' }}
-                  iconType="line"
                 />
                 {selectedForklifts.includes('t5') && (
-                  <Line 
-                    type="monotone" 
+                  <Bar 
                     dataKey="t5" 
-                    stroke="#ef4444" 
+                    fill="#ef4444" 
                     name="T5"
-                    strokeWidth={1.5}
-                    dot={false}
                   />
                 )}
                 {selectedForklifts.includes('t9') && (
-                  <Line 
-                    type="monotone" 
+                  <Bar 
                     dataKey="t9" 
-                    stroke="#f97316" 
+                    fill="#f97316" 
                     name="T9"
-                    strokeWidth={1.5}
-                    dot={false}
                   />
                 )}
                 {selectedForklifts.includes('t7') && (
-                  <Line 
-                    type="monotone" 
+                  <Bar 
                     dataKey="t7" 
-                    stroke="#334155" 
+                    fill="#334155" 
                     name="T7"
-                    strokeWidth={1.5}
-                    dot={false}
                   />
                 )}
                 {selectedForklifts.includes('t4') && (
-                  <Line 
-                    type="monotone" 
+                  <Bar 
                     dataKey="t4" 
-                    stroke="#3b82f6" 
+                    fill="#3b82f6" 
                     name="T4"
-                    strokeWidth={1.5}
-                    dot={false}
                   />
                 )}
                 {selectedForklifts.includes('d1') && (
-                  <Line 
-                    type="monotone" 
+                  <Bar 
                     dataKey="d1" 
-                    stroke="#10b981" 
+                    fill="#10b981" 
                     name="D1"
-                    strokeWidth={1.5}
-                    dot={false}
                   />
                 )}
-              </LineChart>
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
