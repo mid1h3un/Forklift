@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
@@ -14,6 +14,7 @@ export default function ForkliftTracker() {
   const [customStartDateTime, setCustomStartDateTime] = useState('');
   const [customEndDateTime, setCustomEndDateTime] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showTrendLine, setShowTrendLine] = useState(true);
   const [dataCache, setDataCache] = useState({});
   const [lastFetchParams, setLastFetchParams] = useState(null);
 
@@ -86,6 +87,55 @@ export default function ForkliftTracker() {
     return await response.json();
   };
 
+  // Calculate trend line data using linear regression
+  const calculateTrendLine = (chartData) => {
+    if (!chartData || chartData.length === 0) return chartData;
+
+    const dataWithTrend = chartData.map((item, index) => {
+      // Calculate average for selected forklifts
+      let sum = 0;
+      let count = 0;
+      
+      selectedForklifts.forEach(key => {
+        if (item[key] !== undefined && item[key] !== null) {
+          sum += item[key];
+          count++;
+        }
+      });
+      
+      const average = count > 0 ? sum / count : 0;
+      
+      return {
+        ...item,
+        average: average,
+        index: index
+      };
+    });
+
+    // Simple linear regression to calculate trend
+    const n = dataWithTrend.length;
+    let sumX = 0;
+    let sumY = 0;
+    let sumXY = 0;
+    let sumX2 = 0;
+
+    dataWithTrend.forEach((item, index) => {
+      sumX += index;
+      sumY += item.average;
+      sumXY += index * item.average;
+      sumX2 += index * index;
+    });
+
+    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+
+    // Add trend values
+    return dataWithTrend.map((item, index) => ({
+      ...item,
+      trend: slope * index + intercept
+    }));
+  };
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -98,7 +148,8 @@ export default function ForkliftTracker() {
 
       // Check if we already have this data and parameters haven't changed
       if (dataCache[cacheKey] && lastFetchParams === cacheKey) {
-        setData(dataCache[cacheKey]);
+        const cachedData = dataCache[cacheKey];
+        setData(calculateTrendLine(cachedData));
         setLoading(false);
         return;
       }
@@ -206,7 +257,7 @@ export default function ForkliftTracker() {
       }));
       
       setLastFetchParams(cacheKey);
-      setData(chartData);
+      setData(calculateTrendLine(chartData));
     } catch (err) {
       setError(err.message);
       console.error('Error fetching data:', err);
@@ -218,6 +269,13 @@ export default function ForkliftTracker() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Recalculate trend line when selected forklifts change
+  useEffect(() => {
+    if (data.length > 0) {
+      setData(prevData => calculateTrendLine(prevData));
+    }
+  }, [selectedForklifts, showTrendLine]);
 
   const handleForkliftToggle = (forkliftKey) => {
     setSelectedForklifts(prev => {
@@ -432,6 +490,20 @@ export default function ForkliftTracker() {
               </>
             )}
 
+            {/* Trend Line Toggle */}
+            <div className="filter-item">
+              <label className="filter-label">Trend Line:</label>
+              <label className="dropdown-item" style={{ border: '1px solid #d1d5db', borderRadius: '6px', padding: '8px 12px', backgroundColor: 'white', minWidth: '30px', height: '38px', boxSizing: 'border-box' }}>
+                <input
+                  type="checkbox"
+                  checked={showTrendLine}
+                  onChange={() => setShowTrendLine(!showTrendLine)}
+                  className="checkbox-input"
+                />
+                <span className="checkbox-text"></span>
+              </label>
+            </div>
+
             {/* Apply Button */}
             <button onClick={handleApplyFilters} className="apply-button">
               Apply Filters
@@ -477,7 +549,7 @@ export default function ForkliftTracker() {
           <div className="chart-container">
             <h2 className="chart-title">Usage Over Time</h2>
             <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
+              <ComposedChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis 
                   dataKey="date" 
@@ -528,7 +600,18 @@ export default function ForkliftTracker() {
                     name="D1"
                   />
                 )}
-              </BarChart>
+                {showTrendLine && (
+                  <Line 
+                    type="monotone" 
+                    dataKey="trend" 
+                    stroke="#8b5cf6" 
+                    strokeWidth={3}
+                    dot={false}
+                    name="Trend"
+                    strokeDasharray="5 5"
+                  />
+                )}
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
         </div>
