@@ -6,10 +6,12 @@
   padding: 12px;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 }
 
 .main-container {
   padding: 12px;
+  box-sizing: border-box;
 }
 
 /* Card Styles */
@@ -20,6 +22,7 @@
   padding: 16px;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 }
 
 /* Download Button */
@@ -38,6 +41,8 @@
   transition: background-color 0.2s;
   white-space: nowrap;
   height: 38px;
+  flex-shrink: 0;
+  margin-top: 15px;
 }
 
 .download-button:hover {
@@ -55,19 +60,22 @@
   border-radius: 8px;
   padding: 12px 16px;
   margin-bottom: 16px;
+  box-sizing: border-box;
 }
 
 .filters-row {
   display: flex;
-  align-items: flex-end;
-  gap: 16px;
+  align-items: center;
+  gap: 12px;
   flex-wrap: wrap;
+  box-sizing: border-box;
 }
 
 .filter-item {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  box-sizing: border-box;
 }
 
 .filter-label {
@@ -97,6 +105,7 @@
   justify-content: space-between;
   transition: all 0.2s;
   height: 38px;
+  box-sizing: border-box;
 }
 
 .dropdown-button:hover {
@@ -129,6 +138,7 @@
   cursor: pointer;
   user-select: none;
   transition: background-color 0.15s;
+  box-sizing: border-box;
 }
 
 .dropdown-item:hover {
@@ -149,6 +159,7 @@
   height: 16px;
   margin-right: 8px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .checkbox-text {
@@ -169,11 +180,12 @@
   background-color: white;
   cursor: pointer;
   min-width: 140px;
-  height: 40px;
+  height: 38px;
+  box-sizing: border-box;
 }
 
 .datetime-input {
-  min-width: 180px;
+  min-width: 200px;
 }
 
 .select-input:focus,
@@ -197,6 +209,8 @@
   transition: background-color 0.2s;
   white-space: nowrap;
   height: 38px;
+  flex-shrink: 0;
+  margin-top: 15px;
 }
 
 .apply-button:hover {
