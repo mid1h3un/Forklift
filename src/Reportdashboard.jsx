@@ -490,20 +490,6 @@ export default function ForkliftTracker() {
               </>
             )}
 
-            {/* Trend Line Toggle */}
-            <div className="filter-item">
-              <label className="filter-label">Trend Line:</label>
-              <label className="dropdown-item" style={{ border: '1px solid #d1d5db', borderRadius: '6px', padding: '8px 12px', backgroundColor: 'white', minWidth: '30px', height: '38px', boxSizing: 'border-box' }}>
-                <input
-                  type="checkbox"
-                  checked={showTrendLine}
-                  onChange={() => setShowTrendLine(!showTrendLine)}
-                  className="checkbox-input"
-                />
-                <span className="checkbox-text"></span>
-              </label>
-            </div>
-
             {/* Apply Button */}
             <button onClick={handleApplyFilters} className="apply-button">
               Apply Filters
@@ -547,7 +533,23 @@ export default function ForkliftTracker() {
 
           {/* Chart */}
           <div className="chart-container">
-            <h2 className="chart-title">Usage Over Time</h2>
+            <div className="chart-header">
+              <h2 className="chart-title">Usage Over Time</h2>
+              
+              {/* Trend Line Toggle */}
+              <div className="trend-toggle">
+                <label className="trend-toggle-label">
+                  <input
+                    type="checkbox"
+                    checked={showTrendLine}
+                    onChange={() => setShowTrendLine(!showTrendLine)}
+                    className="checkbox-input"
+                  />
+                  <span className="trend-toggle-text">Show Trend Line</span>
+                </label>
+              </div>
+            </div>
+
             <ResponsiveContainer width="100%" height={350}>
               <ComposedChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
