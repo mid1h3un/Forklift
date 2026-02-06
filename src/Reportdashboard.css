@@ -297,11 +297,44 @@
   overflow: hidden;
 }
 
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
 .chart-title {
   font-size: 0.875rem;
   font-weight: 600;
-  margin-bottom: 8px;
   color: #374151;
+  margin: 0;
+}
+
+.trend-toggle {
+  display: flex;
+  align-items: center;
+}
+
+.trend-toggle-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.15s;
+}
+
+.trend-toggle-label:hover {
+  background-color: #f3f4f6;
+}
+
+.trend-toggle-text {
+  font-size: 0.75rem;
+  color: #374151;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 /* Loading Styles */
