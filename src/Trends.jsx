@@ -373,14 +373,15 @@ const ForkliftTrends = () => {
                   style={{
                     padding: "5px 9px",
                     cursor: "pointer",
-                    background: "#f44336",
-                    color: "white",
-                    border: "none",
+                    color: "black",
+                    fontWeight: "bold",
+                    border: "1px solid #ccc",
+                    background: "#f0f0f0",
                     borderRadius: "3px",
                     marginLeft: "5px"
                   }}
                 >
-                  ✕
+                  OK
                 </button>
               </div>
               
