@@ -9,7 +9,7 @@ export default function ForkliftTracker() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedForklifts, setSelectedForklifts] = useState(['t5', 't9', 't7', 't4', 'd1']);
+  const [selectedForklifts, setSelectedForklifts] = useState(['t5', 't9', 't7', 't4', 'd1', 'l11', 'l12', 't8', 'd4', 't1']);
   const [dateRange, setDateRange] = useState('14');
   const [customStartDateTime, setCustomStartDateTime] = useState('');
   const [customEndDateTime, setCustomEndDateTime] = useState('');
@@ -25,7 +25,12 @@ export default function ForkliftTracker() {
     { name: "Forklift T9", imei: "865931084963206", key: "t9" },
     { name: "Forklift T7", imei: "865931084970326", key: "t7" },
     { name: "Forklift D1", imei: "865931084979863", key: "d1" },
-    { name: "Forklift T4", imei: "865931084970615", key: "t4" }
+    { name: "Forklift T4", imei: "865931084970615", key: "t4" },
+    { name: "Forklift L11", imei: "862774080074088", key: "l11" },
+    { name: "Forklift L12", imei: "862774080073668", key: "l12" },
+    { name: "Forklift T8", imei: "862774080051581", key: "t8" },
+    { name: "Forklift D4", imei: "862774080074161", key: "d4" },
+    { name: "Forklift T1", imei: "862774080072280", key: "t1" }
   ];
 
   const generateDateRange = (days) => {
@@ -514,6 +519,11 @@ export default function ForkliftTracker() {
                   {selectedForklifts.includes('t7') && <th>T7</th>}
                   {selectedForklifts.includes('t4') && <th>T4</th>}
                   {selectedForklifts.includes('d1') && <th>D1</th>}
+                  {selectedForklifts.includes('l11') && <th>L11</th>}
+                  {selectedForklifts.includes('l12') && <th>L12</th>}
+                  {selectedForklifts.includes('t8') && <th>T8</th>}
+                  {selectedForklifts.includes('d4') && <th>D4</th>}
+                  {selectedForklifts.includes('t1') && <th>T1</th>}
                 </tr>
               </thead>
               <tbody>
@@ -525,6 +535,11 @@ export default function ForkliftTracker() {
                     {selectedForklifts.includes('t7') && <td className="data-cell">{row.t7?.toFixed(1) || '0.0'}</td>}
                     {selectedForklifts.includes('t4') && <td className="data-cell">{row.t4?.toFixed(1) || '0.0'}</td>}
                     {selectedForklifts.includes('d1') && <td className="data-cell">{row.d1?.toFixed(1) || '0.0'}</td>}
+                    {selectedForklifts.includes('l11') && <td className="data-cell">{row.l11?.toFixed(1) || '0.0'}</td>}
+                    {selectedForklifts.includes('l12') && <td className="data-cell">{row.l12?.toFixed(1) || '0.0'}</td>}
+                    {selectedForklifts.includes('t8') && <td className="data-cell">{row.t8?.toFixed(1) || '0.0'}</td>}
+                    {selectedForklifts.includes('d4') && <td className="data-cell">{row.d4?.toFixed(1) || '0.0'}</td>}
+                    {selectedForklifts.includes('t1') && <td className="data-cell">{row.t1?.toFixed(1) || '0.0'}</td>}
                   </tr>
                 ))}
               </tbody>
@@ -602,11 +617,46 @@ export default function ForkliftTracker() {
                     name="D1"
                   />
                 )}
+                {selectedForklifts.includes('l11') && (
+                  <Bar 
+                    dataKey="l11" 
+                    fill="#8b5cf6" 
+                    name="L11"
+                  />
+                )}
+                {selectedForklifts.includes('l12') && (
+                  <Bar 
+                    dataKey="l12" 
+                    fill="#ec4899" 
+                    name="L12"
+                  />
+                )}
+                {selectedForklifts.includes('t8') && (
+                  <Bar 
+                    dataKey="t8" 
+                    fill="#14b8a6" 
+                    name="T8"
+                  />
+                )}
+                {selectedForklifts.includes('d4') && (
+                  <Bar 
+                    dataKey="d4" 
+                    fill="#f59e0b" 
+                    name="D4"
+                  />
+                )}
+                {selectedForklifts.includes('t1') && (
+                  <Bar 
+                    dataKey="t1" 
+                    fill="#6366f1" 
+                    name="T1"
+                  />
+                )}
                 {showTrendLine && (
                   <Line 
                     type="monotone" 
                     dataKey="trend" 
-                    stroke="#8b5cf6" 
+                    stroke="#dc2626" 
                     strokeWidth={3}
                     dot={false}
                     name="Trend"
@@ -621,4 +671,3 @@ export default function ForkliftTracker() {
     </div>
   );
 }
-
