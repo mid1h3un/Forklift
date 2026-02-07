@@ -20,7 +20,8 @@ const ForkliftTrends = () => {
     { name: "Forklift T4", imei: "865931084970615" },
     { name: "Forklift L11", imei: "862774080074088" },
     { name: "Forklift L12", imei: "862774080073668" },
-    { name: "Forklift T8", imei: "862774080051581" }
+    { name: "Forklift T8", imei: "862774080051581" },
+    { name: "Forklift D4", imei: "862774080074161" }
   ];
 
   const availableTags = [];
