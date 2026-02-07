@@ -7,7 +7,7 @@ const ForkliftDashboard = () => {
     { name: "Forklift T5", imei: "867512077469365" },
     { name: "Forklift T9", imei: "865931084963206" },
     { name: "Forklift T7", imei: "865931084970326" },
-    { name: "Forklift D1", imei: "865931084979863" },
+    { name: "Forklift D1", imei: "867512077492508" },
     { name: "Forklift T4", imei: "865931084970615" },
     { name: "Forklift L11", imei: "862774080074088" },
     { name: "Forklift L12", imei: "862774080073668" },
