@@ -24,8 +24,8 @@ export default function ForkliftTracker() {
     { name: "Forklift T5", imei: "867512077469365", key: "t5" },
     { name: "Forklift T9", imei: "865931084963206", key: "t9" },
     { name: "Forklift T7", imei: "865931084970326", key: "t7" },
-    { name: "Forklift T4", imei: "865931084979863", key: "t4" },
-    { name: "Forklift D1", imei: "865931084970615", key: "d1" }
+    { name: "Forklift D1", imei: "865931084979863", key: "d1" },
+    { name: "Forklift T4", imei: "865931084970615", key: "t4" }
   ];
 
   const generateDateRange = (days) => {
@@ -621,3 +621,4 @@ export default function ForkliftTracker() {
     </div>
   );
 }
+
