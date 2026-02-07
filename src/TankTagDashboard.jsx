@@ -12,7 +12,8 @@ const ForkliftDashboard = () => {
     { name: "Forklift L11", imei: "862774080074088" },
     { name: "Forklift L12", imei: "862774080073668" },
     { name: "Forklift T8", imei: "862774080051581" },
-    { name: "Forklift D4", imei: "862774080074161" }
+    { name: "Forklift D4", imei: "862774080074161" },
+    { name: "Forklift T1", imei: "862774080072280" }
   ]), []);
 
   const [selected, setSelected] = useState("");
