@@ -10,7 +10,8 @@ const forklifts = [
   { name: "Forklift D1", imei: "865931084979863" },
   { name: "Forklift T4", imei: "865931084970615" },
   { name: "Forklift L11", imei: "862774080074088" },
-  { name: "Forklift L12", imei: "862774080073668" }
+  { name: "Forklift L12", imei: "862774080073668" },
+  { name: "Forklift T8", imei: "862774080051581" }
 ];
 
 const Report = () => {
