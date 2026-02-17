@@ -666,7 +666,7 @@ export default function ForkliftTracker() {
         // Add Shift Breakdown Title
         doc.setFontSize(14);
         doc.setFont(undefined, 'bold');
-        doc.text('Shift Wise Forklift Utilization Breakdown', 14, yPosition);
+        doc.text('Shift Wise Forklift Utilization', 14, yPosition);
         doc.setFont(undefined, 'normal');
         yPosition += 10;
         
@@ -1203,3 +1203,4 @@ export default function ForkliftTracker() {
     </div>
   );
 }
+
