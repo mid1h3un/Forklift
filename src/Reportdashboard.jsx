@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, Cell } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
@@ -418,160 +418,104 @@ export default function ForkliftTracker() {
   };
 
   const renderShiftChart = (shiftData, isMaximized = false) => {
-    const fontSize = isMaximized ? { axis: 14, legend: 13, label: 11 } : { axis: 9, legend: 9, label: 8 };
+    const fontSize = isMaximized ? { axis: 14, label: 11 } : { axis: 10, label: 9 };
     const margin = isMaximized 
-      ? { top: 40, right: 30, left: 10, bottom: 60 }
-      : { top: 20, right: 10, left: -10, bottom: 30 };
+      ? { top: 40, right: 30, left: 10, bottom: 50 }
+      : { top: 20, right: 10, left: -10, bottom: 35 };
+    
+    // Transform data to have separate entries for each forklift
+    const transformedData = selectedForklifts.map(key => ({
+      forklift: key.toUpperCase(),
+      hours: shiftData[key] || 0,
+      color: {
+        't5': '#ef4444',
+        't9': '#f97316',
+        't7': '#334155',
+        't4': '#3b82f6',
+        'd1': '#10b981',
+        'l11': '#8b5cf6',
+        'l12': '#ec4899',
+        't8': '#14b8a6',
+        'd4': '#f59e0b',
+        't1': '#6366f1'
+      }[key]
+    }));
     
     return (
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart 
-          data={[shiftData]} 
+          data={transformedData} 
           margin={margin}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis 
-            dataKey="shift"
-            tick={{ fontSize: fontSize.axis }}
-            hide
+            dataKey="forklift"
+            tick={{ fontSize: fontSize.axis, fontWeight: 'bold' }}
           />
           <YAxis tick={{ fontSize: fontSize.axis }} width={isMaximized ? 50 : 30} />
-          <Legend 
-            verticalAlign="bottom"
-            height={isMaximized ? 50 : 30}
-            wrapperStyle={{ paddingTop: isMaximized ? '10px' : '4px', fontSize: `${fontSize.legend}px` }}
-            iconSize={isMaximized ? 12 : 8}
-          />
-          {selectedForklifts.includes('t5') && (
-            <Bar dataKey="t5" fill="#ef4444" name="T5">
-              <LabelList dataKey="t5" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
-          {selectedForklifts.includes('t9') && (
-            <Bar dataKey="t9" fill="#f97316" name="T9">
-              <LabelList dataKey="t9" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
-          {selectedForklifts.includes('t7') && (
-            <Bar dataKey="t7" fill="#334155" name="T7">
-              <LabelList dataKey="t7" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
-          {selectedForklifts.includes('t4') && (
-            <Bar dataKey="t4" fill="#3b82f6" name="T4">
-              <LabelList dataKey="t4" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
-          {selectedForklifts.includes('d1') && (
-            <Bar dataKey="d1" fill="#10b981" name="D1">
-              <LabelList dataKey="d1" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
-          {selectedForklifts.includes('l11') && (
-            <Bar dataKey="l11" fill="#8b5cf6" name="L11">
-              <LabelList dataKey="l11" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
-          {selectedForklifts.includes('l12') && (
-            <Bar dataKey="l12" fill="#ec4899" name="L12">
-              <LabelList dataKey="l12" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
-          {selectedForklifts.includes('t8') && (
-            <Bar dataKey="t8" fill="#14b8a6" name="T8">
-              <LabelList dataKey="t8" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
-          {selectedForklifts.includes('d4') && (
-            <Bar dataKey="d4" fill="#f59e0b" name="D4">
-              <LabelList dataKey="d4" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
-          {selectedForklifts.includes('t1') && (
-            <Bar dataKey="t1" fill="#6366f1" name="T1">
-              <LabelList dataKey="t1" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
+          <Bar dataKey="hours" fill="#8884d8">
+            {transformedData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.color} />
+            ))}
+            <LabelList 
+              dataKey="hours" 
+              position="top" 
+              style={{ fontSize: `${fontSize.label}px`, fill: '#374151', fontWeight: 'bold' }} 
+              formatter={(value) => value?.toFixed(1)} 
+            />
+          </Bar>
         </ComposedChart>
       </ResponsiveContainer>
     );
   };
 
   const renderTotalChart = (isMaximized = false) => {
-    const fontSize = isMaximized ? { axis: 14, legend: 13, label: 11 } : { axis: 11, legend: 11, label: 10 };
+    const fontSize = isMaximized ? { axis: 14, label: 11 } : { axis: 11, label: 10 };
     const margin = isMaximized 
-      ? { top: 40, right: 30, left: 10, bottom: 60 }
-      : { top: 30, right: 20, left: 0, bottom: 40 };
+      ? { top: 40, right: 30, left: 10, bottom: 50 }
+      : { top: 30, right: 20, left: 0, bottom: 35 };
+    
+    // Transform data to have separate entries for each forklift
+    const transformedData = selectedForklifts.map(key => ({
+      forklift: key.toUpperCase(),
+      hours: totalDayData[0][key] || 0,
+      color: {
+        't5': '#ef4444',
+        't9': '#f97316',
+        't7': '#334155',
+        't4': '#3b82f6',
+        'd1': '#10b981',
+        'l11': '#8b5cf6',
+        'l12': '#ec4899',
+        't8': '#14b8a6',
+        'd4': '#f59e0b',
+        't1': '#6366f1'
+      }[key]
+    }));
     
     return (
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart 
-          data={totalDayData} 
+          data={transformedData} 
           margin={margin}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis 
-            dataKey="label"
-            tick={{ fontSize: fontSize.axis }}
-            hide
+            dataKey="forklift"
+            tick={{ fontSize: fontSize.axis, fontWeight: 'bold' }}
           />
           <YAxis tick={{ fontSize: fontSize.axis }} width={isMaximized ? 50 : 35} />
-          <Legend 
-            verticalAlign="bottom"
-            height={isMaximized ? 50 : 40}
-            wrapperStyle={{ paddingTop: isMaximized ? '10px' : '8px', fontSize: `${fontSize.legend}px` }}
-            iconSize={isMaximized ? 14 : 12}
-          />
-          {selectedForklifts.includes('t5') && (
-            <Bar dataKey="t5" fill="#ef4444" name="T5">
-              <LabelList dataKey="t5" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
-          {selectedForklifts.includes('t9') && (
-            <Bar dataKey="t9" fill="#f97316" name="T9">
-              <LabelList dataKey="t9" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
-          {selectedForklifts.includes('t7') && (
-            <Bar dataKey="t7" fill="#334155" name="T7">
-              <LabelList dataKey="t7" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
-          {selectedForklifts.includes('t4') && (
-            <Bar dataKey="t4" fill="#3b82f6" name="T4">
-              <LabelList dataKey="t4" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
-          {selectedForklifts.includes('d1') && (
-            <Bar dataKey="d1" fill="#10b981" name="D1">
-              <LabelList dataKey="d1" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
-          {selectedForklifts.includes('l11') && (
-            <Bar dataKey="l11" fill="#8b5cf6" name="L11">
-              <LabelList dataKey="l11" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
-          {selectedForklifts.includes('l12') && (
-            <Bar dataKey="l12" fill="#ec4899" name="L12">
-              <LabelList dataKey="l12" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
-          {selectedForklifts.includes('t8') && (
-            <Bar dataKey="t8" fill="#14b8a6" name="T8">
-              <LabelList dataKey="t8" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
-          {selectedForklifts.includes('d4') && (
-            <Bar dataKey="d4" fill="#f59e0b" name="D4">
-              <LabelList dataKey="d4" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
-          {selectedForklifts.includes('t1') && (
-            <Bar dataKey="t1" fill="#6366f1" name="T1">
-              <LabelList dataKey="t1" position="top" style={{ fontSize: `${fontSize.label}px`, fill: '#374151' }} formatter={(value) => value?.toFixed(1)} />
-            </Bar>
-          )}
+          <Bar dataKey="hours" fill="#8884d8">
+            {transformedData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.color} />
+            ))}
+            <LabelList 
+              dataKey="hours" 
+              position="top" 
+              style={{ fontSize: `${fontSize.label}px`, fill: '#374151', fontWeight: 'bold' }} 
+              formatter={(value) => value?.toFixed(1)} 
+            />
+          </Bar>
         </ComposedChart>
       </ResponsiveContainer>
     );
