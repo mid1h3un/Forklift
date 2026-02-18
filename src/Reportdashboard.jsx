@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -33,7 +33,7 @@ export default function ForkliftTracker() {
     { name: "Forklift L11", imei: "862774080074088", key: "l11" },
     { name: "Forklift L12", imei: "862774080073668", key: "l12" },
     { name: "Forklift T8", imei: "862774080051581", key: "t8" },
-    { name: "Forklift D4", imei: "867512077492508", key: "d4" },
+    { name: "Forklift D4", imei: "862774080074161", key: "d4" },
     { name: "Forklift T1", imei: "862774080072280", key: "t1" }
   ];
 
@@ -577,6 +577,59 @@ export default function ForkliftTracker() {
     );
   };
 
+  // Helper function to render charts into a temporary container for PDF
+  const renderChartToCanvas = async (chartData, isTotal = false) => {
+    // Create a temporary container for rendering
+    const tempContainer = document.createElement('div');
+    tempContainer.style.width = '1200px';
+    tempContainer.style.height = '600px';
+    tempContainer.style.position = 'absolute';
+    tempContainer.style.left = '-9999px';
+    tempContainer.style.backgroundColor = '#ffffff';
+    document.body.appendChild(tempContainer);
+
+    // Import React DOM dynamically
+    const ReactDOM = await import('react-dom/client');
+    const root = ReactDOM.createRoot(tempContainer);
+    
+    return new Promise((resolve, reject) => {
+      try {
+        // Render the maximized version of the chart
+        const chartElement = isTotal ? renderTotalChart(true) : renderShiftChart(chartData, true);
+        
+        root.render(chartElement);
+        
+        // Wait for the chart to render
+        setTimeout(async () => {
+          try {
+            const canvas = await html2canvas(tempContainer, {
+              scale: 3,
+              backgroundColor: '#ffffff',
+              logging: false,
+              useCORS: true,
+              width: 1200,
+              height: 600
+            });
+            
+            // Cleanup
+            root.unmount();
+            document.body.removeChild(tempContainer);
+            
+            resolve(canvas);
+          } catch (error) {
+            root.unmount();
+            document.body.removeChild(tempContainer);
+            reject(error);
+          }
+        }, 300); // Increased timeout to ensure recharts renders
+      } catch (error) {
+        root.unmount();
+        document.body.removeChild(tempContainer);
+        reject(error);
+      }
+    });
+  };
+
   const downloadPDF = async () => {
     const doc = new jsPDF();
     
@@ -600,62 +653,48 @@ export default function ForkliftTracker() {
     doc.text(dateInfo, 14, 32);
     
     if (dateRange === 'shift' && shiftData && totalDayData) {
-      // Generate shift report PDF with new layout
+      // Generate shift report PDF with maximized graphs
       try {
-        // Get total day card and shift cards
-        const totalDayCard = document.querySelector('.total-day-card');
-        const shiftCards = document.querySelectorAll('.shift-card-small');
-        
         let yPosition = 40;
         
-        // Add Total Day Report (Full Width)
-        if (totalDayCard) {
-          doc.setFontSize(16);
-          doc.setFont(undefined, 'bold');
-          doc.text('Total Forklift Run Hours (6 AM - 6 AM)', 14, yPosition);
-          doc.setFont(undefined, 'normal');
-          yPosition += 10;
+        // Add Total Day Report (Full Width) with maximized graph
+        doc.setFontSize(16);
+        doc.setFont(undefined, 'bold');
+        doc.text('Total Forklift Run Hours (6 AM - 6 AM)', 14, yPosition);
+        doc.setFont(undefined, 'normal');
+        yPosition += 10;
+        
+        try {
+          // Render maximized total chart
+          const canvas = await renderChartToCanvas(totalDayData[0], true);
+          const imgData = canvas.toDataURL('image/png');
+          const imgWidth = 180;
+          const imgHeight = (canvas.height / canvas.width) * imgWidth;
           
-          try {
-            const chartElement = totalDayCard.querySelector('.total-chart');
-            if (chartElement) {
-              const canvas = await html2canvas(chartElement, {
-                scale: 2,
-                backgroundColor: '#ffffff',
-                logging: false,
-                useCORS: true
-              });
-              
-              const imgData = canvas.toDataURL('image/png');
-              const imgWidth = 180;
-              const imgHeight = (canvas.height / canvas.width) * imgWidth;
-              
-              doc.addImage(imgData, 'PNG', 14, yPosition, imgWidth, Math.min(imgHeight, 100));
-              yPosition += Math.min(imgHeight, 100) + 10;
-            }
-          } catch (error) {
-            console.error('Error capturing total day chart:', error);
-          }
-          
-          // Add table for total day data
-          const totalData = totalDayData[0];
-          const totalTableHeaders = ['Forklift', 'Hours'];
-          const totalTableData = selectedForklifts.map(key => {
-            const forklift = forklifts.find(f => f.key === key);
-            return [forklift.key.toUpperCase(), totalData[key]?.toFixed(1) || '0.0'];
-          });
-          
-          autoTable(doc, {
-            head: [totalTableHeaders],
-            body: totalTableData,
-            startY: yPosition,
-            styles: { fontSize: 9 },
-            headStyles: { fillColor: [59, 130, 246] },
-            margin: { left: 14, right: 14 }
-          });
-          
-          yPosition = doc.lastAutoTable.finalY + 15;
+          doc.addImage(imgData, 'PNG', 14, yPosition, imgWidth, Math.min(imgHeight, 100));
+          yPosition += Math.min(imgHeight, 100) + 10;
+        } catch (error) {
+          console.error('Error capturing total day chart:', error);
         }
+        
+        // Add table for total day data
+        const totalData = totalDayData[0];
+        const totalTableHeaders = ['Forklift', 'Hours'];
+        const totalTableData = selectedForklifts.map(key => {
+          const forklift = forklifts.find(f => f.key === key);
+          return [forklift.key.toUpperCase(), totalData[key]?.toFixed(1) || '0.0'];
+        });
+        
+        autoTable(doc, {
+          head: [totalTableHeaders],
+          body: totalTableData,
+          startY: yPosition,
+          styles: { fontSize: 9 },
+          headStyles: { fillColor: [59, 130, 246] },
+          margin: { left: 14, right: 14 }
+        });
+        
+        yPosition = doc.lastAutoTable.finalY + 15;
         
         // Check if we need a new page
         if (yPosition > 200) {
@@ -670,13 +709,12 @@ export default function ForkliftTracker() {
         doc.setFont(undefined, 'normal');
         yPosition += 10;
         
-        // Add three shift reports
+        // Add three shift reports with side-by-side layout using maximized graphs
         for (let i = 0; i < shiftData.length; i++) {
           const shift = shiftData[i];
-          const shiftCard = shiftCards[i];
           
           // Check if we need a new page
-          if (yPosition > 220) {
+          if (yPosition > 200) {
             doc.addPage();
             yPosition = 20;
           }
@@ -688,10 +726,11 @@ export default function ForkliftTracker() {
           doc.setFont(undefined, 'normal');
           yPosition += 8;
           
-          // Create two columns: table on left, chart on right
+          // Define layout columns - table on left, chart on right
           const leftColumnX = 14;
-          const rightColumnX = 100;
-          const columnWidth = 86;
+          const rightColumnX = 85;
+          const tableWidth = 60;
+          const chartWidth = 110;
           
           // Prepare table data
           const tableHeaders = ['Forklift', 'Hours'];
@@ -705,40 +744,29 @@ export default function ForkliftTracker() {
             head: [tableHeaders],
             body: tableData,
             startY: yPosition,
-            styles: { fontSize: 8 },
+            styles: { fontSize: 9, cellPadding: 2 },
             headStyles: { fillColor: [75, 85, 99] },
             margin: { left: leftColumnX },
-            tableWidth: columnWidth - 10
+            tableWidth: tableWidth
           });
           
           const tableEndY = doc.lastAutoTable.finalY;
           
-          // Capture and add chart in right column
-          if (shiftCard) {
-            try {
-              const chartElement = shiftCard.querySelector('.shift-chart-small');
-              if (chartElement) {
-                const canvas = await html2canvas(chartElement, {
-                  scale: 2,
-                  backgroundColor: '#ffffff',
-                  logging: false,
-                  useCORS: true
-                });
-                
-                const imgData = canvas.toDataURL('image/png');
-                const imgWidth = columnWidth;
-                const imgHeight = (canvas.height / canvas.width) * imgWidth;
-                
-                // Add chart image in right column
-                doc.addImage(imgData, 'PNG', rightColumnX, yPosition, imgWidth, Math.min(imgHeight, 60));
-              }
-            } catch (error) {
-              console.error(`Error capturing chart for ${shift.shift}:`, error);
-            }
+          // Capture and add maximized chart in right column
+          try {
+            const canvas = await renderChartToCanvas(shift, false);
+            const imgData = canvas.toDataURL('image/png');
+            const imgWidth = chartWidth;
+            const imgHeight = (canvas.height / canvas.width) * imgWidth;
+            
+            // Add chart image in right column
+            doc.addImage(imgData, 'PNG', rightColumnX, yPosition, imgWidth, Math.min(imgHeight, 80));
+          } catch (error) {
+            console.error(`Error capturing chart for ${shift.shift}:`, error);
           }
           
           // Position for next shift
-          yPosition = Math.max(tableEndY, yPosition + 65) + 8;
+          yPosition = Math.max(tableEndY, yPosition + 85) + 5;
           
           // Add separator line
           if (i < shiftData.length - 1) {
@@ -1203,4 +1231,3 @@ export default function ForkliftTracker() {
     </div>
   );
 }
-
